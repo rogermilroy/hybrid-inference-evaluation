@@ -161,3 +161,13 @@ testing/testing/MNIST
 *.synctex.gz
 *.synctex.gz(busy)
 *.pdfsync
+
+## ros files
+devel/
+logs/
+build/
+bin/
+lib/
+msg_gen/
+srv_gen/
+.catkin_workspace
