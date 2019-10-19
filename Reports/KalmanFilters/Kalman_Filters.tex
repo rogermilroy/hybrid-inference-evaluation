@@ -1,0 +1,61 @@
+% \documentclass[]{../resources/final_report}
+\documentclass[]{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Kalman Filters, Extended Kalman Filters and their Applications in Sensor Fusion and State Estimation}
+\date{2019\\ October}
+\author{Roger Milroy\\ Department of Computer Science\\ Royal Holloway, University of London}
+
+\maketitle
+
+\section{Introduction}
+
+Kalman filters are used widely in many applications. The original problem modelled by Kalman was the Weiner problem \cite{Kalman1960ANA}. 
+This is the problem of finding the specification of a linear dynamic system which is measured by a noisy (random noise) sensor.
+In somewhat simplified terms the challenge is the separation of signal from noise.
+The problem can be thought of as three similar problems. That of prediction, that of filtering and that of data smoothing. The difference between them being the time step in question.
+The application that is of interest here is that of filtering being that real time control and estimation is the goal. Depending on the performance of computations prediction may also be relevant though the difference is relatively minor.
+
+As the Kalman filter only applies to linear dynamic systems to use it for non-linear systems we need something else. This is called an Extended Kalman Filter and in essence it is a Kalman filter applied to a linearized non-linear model. I will go into a little more detail in a later section.
+Another brief note is that the original Kalman filter applies in discrete time steps, that is that in using it you must first discretise the time steps you are dealing with. In a later paper \cite{Klmn1961NewRI} Kalman and Bucy go on to deal more with the continuous case. \cite{}
+
+\section{Kalman Filters}
+
+Kalman formulated the problem by modelling the underlying dynamic system as a Markov process, whereby the state of the system is a result of a transition function applied to the past state and summed with gaussian random noise at each time step. 
+Measurements of the system (state) are functions of the state and as such we cannot ever directly observe the true state of the system.
+\\
+Kalman derives 3 recurrence relation equations that define the optimal estimates at a time $t \geq t_0$. What this means is that given a start state $t_0$ we can compute the optimal estimate of the signal at any time $t$ using these equations.
+
+\section{Extended Kalman Filters}
+
+As stated earlier, Kalman Filters are only valid on linear dynamic models. This is obviously a serious limitation to the technique as a large number of real life systems are non-linear.
+The solution to this limitation is to use Taylor expansions to linearise non-linear models around a reference point. The reference point is usually thought of as the current state and at each time step, we compute the new state and the linearization around the new state.
+This is what is known as an Extended Kalman Filter.
+
+\section{Sensor Fusion}
+
+Though not the original purpose the Kalman filter also gives us a framework for sensor fusion. In the original Kalman filter, there is a parameter $K$, known as the Kalman gain, that denotes the weighting of the measurements, as compared to the predictions. 
+In the original formulation there is only one measurement of the system but there is no reason that we must stick to one measurments alone. If we have multiple sensor readings we must define different Kalman gains for each measurement but otherwise there is very little modification to the underlying equations.
+This is also true for Extended Kalman Filters. The determination of Kalman gains is not clear and in practice is usually found by experimentation.
+
+\section{Conclusion}
+
+As evidenced by their ubiquity, Kalman filters are foundational for all robotics. Enabling the use of imperfect sensors as well as the integration of disparate sensors, they are essential for robots to have reasonable estimates of position. 
+For drones this is obviously also critical, the main usefulness of drones is acheived when they can navigate effectively and for that they must have some idea of where they are.
+Engel et al. \cite{Engel:Camera-basedNav} used an Extended Kalman filter for fusing the position estimates of the visual SLAM system with the IMU data, in order to arrive at the estimate of position. The advantages of the Kalman Filter are really highlighted in their paper as they had to deal with significant delays due to communication realities.
+This meant that the ability of the filter to make reliable predictions of state over these time periods enabled their approach to function.
+
+
+
+%%%% ADD YOUR BIBLIOGRAPHY HERE
+\bibliographystyle{acm}
+\bibliography{../resources/final_project}
+
+
+
+\end{document}
+
+\end{article}

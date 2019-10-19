@@ -129,7 +129,7 @@
 \textsf{\Large  A report submitted in part fulfilment of the degree of\\[0.5cm]
 \textbf{\degree}}\\[0.5cm]
 \textsf{\Large  \textbf{Supervisor:}  \supervisorname}\\[2cm]
-\includegraphics[height=5cm]{logo}\\[2cm]
+\includegraphics[height=5cm]{../resources/images/logo}\\[2cm]
 \textsf{\Large Department of Computer Science\\
 Royal Holloway, University of London\\\vfill
 \normalsize \today}
