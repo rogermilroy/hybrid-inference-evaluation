@@ -8,7 +8,7 @@
 \def\studentname{Roger Milroy}
 \def\reportyear{2019}
 \def\projecttitle{Autonomous Micro Air Vehicles: Enhanced Navigation in GPS denied environments.}
-\def\supervisorname{Sara Bernadini}
+\def\supervisorname{Professor Sara Bernadini}
 \def\degree{BSc (Hons) in Computer Science (Artificial Intelligence)}
 \def\fullOrHalfUnit{Full Unit} % indicate if you are doing the project as a Full Unit or Half Unit
 \def\finalOrInterim{Project Plan} % indicate if this document is your Final Report or Interim Report
@@ -53,11 +53,11 @@
 
   I am proposing to use the newly developed technique of Graphical Recurrent Inference Networks
   in order to improve state estimation in GPS denied environments. I will compare performance to 
-  the technique developed by Engel, Sturm and Cremers. .cite.
+  the technique developed by Engel, Sturm and Cremers \cite{Engel:Camera-basedNav}. 
 
   One of the key challenges of operating with Micro Air Vehicles (MAVs) is payload 
-  and power constraints .cite. , both of which also limit onboard computation. In the 
-  approach my Engel, Sturm and Cremers they communicate with an offboard laptop
+  and power constraints, both of which also limit onboard computation. In the 
+  approach by Engel, Sturm and Cremers they communicate with an offboard laptop
   in order to overcome this issue. This however obviously introduces other issues
   such as range and latency. I would like to see whether using GRIN and a different
   platform will enable me to implement a similar system onboard the drone.
@@ -67,6 +67,13 @@
   present challenges in integration that will enable me to develop skills that will
   trasfer into robotics in general which is an area that I would like to become 
   more involved with.
+
+  Specific goals are: to learn how to program in the ROS framework, to integrate two different pieces of hardware into a functioning package, to combine seperate research output into a single application and to increase the accuracy of position of a drone in space without GPS with only onboard computation. 
+  
+  Programming in ROS is a core skill needed by anyone hoping to develop code in robotics, and will be key to the success of this project.
+  Hardware integration is often challenging but in terms of creating a funtioning product it is extremely important.
+  Combining ideas and techniques that have been expressed in research papers into a cohesive whole is a skill in and of itself. Translating mathematical formulations into code and getting it to function correctly is the core challenge of this project.
+  Finally the aim of the project is to demonstrate a technique that can increase the accuracy of position flying without GPS with onboard computation.
 
 \end{abstract}
 \newpage
@@ -105,21 +112,22 @@ The first term will consist mainly of proof of concept programs and reports that
 
 \subsection{Proof of Concept Programs}
 
-\begin{itemize}
+\begin{enumerate}
   \item \textbf{Simulate Matrice 100 in Gazebo} - It is important to have a standalone simulation of the model in Gazebo as this will allow testing without having the physical drone.
   \item \textbf{Get sensor data from the model in Gazebo} - I will need access to the sensor data for higher level tasks so this will be very important.
-  \item \textbf{Connect Matrice 100 to Gazebo and the OSDK} - I will be targeting deployment onto the Matrice 100 and so I will need to test using it in Gazebo at some point.
-  \item \textbf{Connect a Rasperry Pi to Matrice 100 via the OSDK} - I am planning to use a Rasperry Pi as the compute platform. This is because of its power, light weight and relatively low power draw. I will need to establish communication between the drone and the Pi in order to retrieve data for computation and issue commands for control.
-  \item \textbf{Control the model programmatically via OSDK and ROS} - All the later tasks rely on being able to programmatically control the quadcopter. This will be implemented using ROS and the DJI OSDK.
-  \item \textbf{Write and train an RIM} - RIMs are at the heart of GRIN which is the core component of this project so I need to learn how to program the structure. This will be on a demonstrator task.
-\end{itemize}
+  \item \textbf{Port TUM code to ROS Melodic} - This is of crucial importance as this forms the backbone of the project. It currently targets ROS Indigo which is two releases behind. I will assess the workload for this ASAP.
+  \item \textbf{Run TUM code in Gazebo with Hector quadcopter model} - In order to validate the functioning of the TUM code I will run it in Gazebo. This will also involve creating an adapter to communicate with the Hector quadcopter implementation and tuning some variables in the TUM code.
+  \item \textbf{Get ROS and PyTorch working on the Jetson Nano} - In the second term I will be deploying the technique onto the Matrice and the Jetson will form the onboard compute capability. This means it will have to run both ROS and PyTorch in order to compute position as well as relay control commands to the drone.
+  \item \textbf{Write a GRIN implementation for Kalman Filter} - In order to validate the technique, as well as develop my skills in implementing it I will create a relatively simple GRIN. This will be relatively similar to the one suggested in the paper in order to allow comparison as well as limit complexity. This will validate my ability to implement it on the more complex case that is the TUM code.
+  \item \textbf{Train and run the GRIN on dummy data} - This is primarily to validate the correct functioning as well as identifying best practices for training the networks.
+\end{enumerate}
 
 \subsection{Reports}
 \begin{itemize}
   \item \textbf{Kalman Filters for Sensor Fusion} - Both of the methods I will be contrasting use Kalman Filters and Extended Kalman Filters to integrate different sensor data. I will explore the theory behind this approach to sensor fusion.
-  \item \textbf{Graph Convolutions} - GRIN uses convolutions over graphs in order to integrate neural networks with existing model based approaches. I will explore the theory underlying it and how it will apply to implementing GRIN.
+  \item \textbf{Graphical Recurrent Inference Networks} - I will write a report covering the technique that I plan to use and implement. This will cover what it is, why it is useful and a brief analysis of its advantages and disadvantages particularly in the context that I wish to use it.
   \item \textbf{Applications of Navigation in GPS Denied Environments} - I will explore the current and potential applications of these techniques. What are the challenges in expanding operations in these environments. What might the impact of expanded applications be. This report will have some relevance towards the Professional Issues section of the Final Report.
-  \item \textbf{Recurrent Inference Machines} - GRINs use RIMs which is another recently developed technique. I will explore the theory and present the key concepts and techniques I will need.
+  \item \textbf{Graph Convolutions} - GRIN uses convolutions over graphs in order to integrate neural networks with existing model based approaches. I will explore the theory underlying it and how it will apply to implementing GRIN.
 \end{itemize}
 
 \section{Term 2}
@@ -127,19 +135,22 @@ The first term will consist mainly of proof of concept programs and reports that
 The focus of the second term will be implementing the project. This will involve translating the experience, skills and knowledge gained in the first term into a functioning product.
 
 \subsection{Milestones}
-\begin{itemize}
-  \item \textbf{Port Camera-Based Navigation of a Low Cost Quadrocopter to DJI OSDK} - This is the system that I wish to evaluate against. In the interests of having a fair comparison I will port over the existing code base (which is open source) from the Parrot.AR to the Matrice and Rasperry Pi. I am implementing this first as it is an already implemented solution that will require less work. This will reduce the risks of total project failure.
-  \item \textbf{Implement and train GRIN for the state estimation algorithm chosen} - This is the core of the project.
-  \item \textbf{Quantify computational load and train reduced size model if needed} - As the plan is to deploy the implementation onboard the drone, it is very important that the computational and therefore power load be minimal. If the power load is too high I will attempt to train a minimized model to a similar accuracy.
-  \item \textbf{Test and evaluate performance in Gazebo} - This will form the main evaluation of the work done and will show how successful my project is in relation to the aims.
-  \item \textbf{Test and evaluate on Matrice 100} - This will be a real world evaluation which will demostrate how representative the simulation results are and how robust the project is to real world issues.
-\end{itemize}
+\begin{enumerate}
+  \item \textbf{Write the GRIN implementation to go on top of the TUM code.} - This is the core of the project. I will create the GRIN and integrate it with the TUM position estimation algorithm.
+  \item \textbf{Gather data and train the GRIN} - I will be using Gazebo to gather most training data due to the ability to recover ground truth data. One challenge of this is that the dynamics of the simulated Hector Quadcopter are likely to be different to the Matrice. If I have time and access to the physical drone I will train with a model of the Matrice instead.
+  \item \textbf{Test and evaluate performance in Gazebo} - This will form the core of the evaluation of my project. I will demonstrate the final achieved accuracy compared with the raw TUM code over a variety of figure flying demonstrations.
+  \item \textbf{Connect the Jetson Nano to the Matrice 100} - In order to demostrate it's real world effectiveness I will need to connect the Jetson to the Matrice. This involves data connection via a UART as well as a power connection for which I will need a converter. There will also be software interfacing that I will need to overcome in order to successfully communicate between the two.
+  \item \textbf{Write an adapter to interface with the OSDK} - The code that I write up to this point will be targeting the Hector Quadcopter implementation (assuming that I have not had physical access to the drone up to this point). In order to operate the Matrice however I will need to communicate with the OSDK. For this I will write an adapter to mediate between different representations.
+  \item \textbf{Deploy on Matrice and Jetson and verify real world performance} - If all has gone well then I will be in a position to demonstrate and evaluate the performance of the project in the real world. This will be the culmination of the project if it goes well.
+\end{enumerate}
 
 \subsection{Reports}
 \begin{itemize}
-  \item \textbf{Graphical Recurrent Inference Networks} - This is the technique I am planning to use. The core concept is integrating existing model approaches to inference with neural approaches to achieve improve results. I will explore the theory and present the key concepts and techniques I will need.
-  \item \textbf{Alternative Navigation Techniques} - It is important when implmenting a system like this that you examine and evaluate alternatives. This report will enumerate and evaluate a variety of alternative approaches and their relative advantages.
-  \item \textbf{Vision Based Navigation Techniques} - I will also explore alternative vision based approach to this task. I will summarise their advantages and disadvantages, where they are most appropriate and how they relate to the project I am implementing.
+  \item \textbf{The structure of the TUM code} - The TUM code is a good example of programming capabilities in ROS. I will examine their structure and the design choices they made in order to better decide how I structure my extension.
+  \item \textbf{Hardware integration.} - I will write a report covering common hardware integration challenges and potential solutions. I will naturally focus on issues relevant to the project though I will organise them under general themes so that general applicability is still maximised.
+
+  \item \textbf{Alternative Navigation Techniques} - It is important when implementing a system like this that you examine and evaluate alternatives. This report will itemize and evaluate a variety of alternative approaches and their relative advantages.
+  \item \textbf{Vision Based Navigation Techniques} - I will also explore alternative vision based approaches to this task. I will summarise their advantages and disadvantages, where they are most appropriate and how they relate to the project I am implementing.
 \end{itemize}
 
 \newpage
@@ -147,7 +158,9 @@ The focus of the second term will be implementing the project. This will involve
 \section{Timing and Gantt Chart}
 
 \subsection{Motivation}
-The strategy I have chosen in planning my milestones is intentionally conservative. I am planning for a slow start due to the number and complexity of new technologies and concepts. Once those have been successfully learnt the pace will increase substantially.
+
+The strategy I have chosen in planning my milestones is intentionally conservative.
+I am \linebreak planning for a slow start due to the number and complexity of new technologies and concepts. Once those have been successfully learnt the pace will increase substantially.
 There is also considerable risk in hardware interfacing so I am completing that phase as early as possible.
 \linebreak
 \linebreak
