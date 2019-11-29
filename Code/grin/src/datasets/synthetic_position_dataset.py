@@ -1,7 +1,7 @@
 from torch.utils import data
 from torch import tensor
 import torch
-from Code.grin.src.models.linear_model import LinearModel
+from Code.grin.src.models.linear_model import ConstantVelocityModel
 
 
 class SyntheticPositionDataset(data.Dataset):
@@ -11,7 +11,7 @@ class SyntheticPositionDataset(data.Dataset):
     An unusual dataset as data is generated on demand rather than read from file.
     """
 
-    def __init__(self,x0: tensor, n_samples: int = 5000, starting_point:int = 0, seed: int = 42, device='cpu'):
+    def __init__(self, x0: tensor, n_samples: int = 5000, starting_point:int = 0, seed: int = 42, device='cpu'):
         """
         Initialises various parameters of the dataset.
         :param n_samples: How many samples the dataset will contain. Default 5000
@@ -37,7 +37,8 @@ class SyntheticPositionDataset(data.Dataset):
         """
         return self.data[index], self.labels[index]
 
-    def generate_data(self, x0: tensor, n_samples: int, starting_point: int, seed: int) -> tensor:
+    @staticmethod
+    def generate_data(x0: tensor, n_samples: int, starting_point: int, seed: int) -> tensor:
         """
         Generates a dataset of n samples
         :param x0:
@@ -48,7 +49,7 @@ class SyntheticPositionDataset(data.Dataset):
         """
         # create a linear model with mostly default parameters.
         torch.manual_seed(seed)
-        model = LinearModel(x0=x0)
+        model = ConstantVelocityModel(x0=x0)
 
         ground_truth = torch.zeros((n_samples+starting_point, x0.size()[0]))  # TODO check x0 dimensions.
         measurements = torch.zeros((n_samples+starting_point, 2))  # TODO auto fill size of the measurements

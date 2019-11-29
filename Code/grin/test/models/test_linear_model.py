@@ -1,5 +1,5 @@
 from unittest import TestCase
-from ...src.models.linear_model import LinearModel
+from ...src.models.linear_model import ConstantVelocityModel
 import torch
 
 
@@ -8,7 +8,7 @@ class TestLinearModel(TestCase):
     def setUp(self) -> None:
         torch.manual_seed(42)
         self.x0 = torch.tensor([0., 1., 0., 2.])
-        self.model = LinearModel(x0=self.x0, lambdasq=0.0001, sigma_x=0.0001, sigma_y=0.0001)
+        self.model = ConstantVelocityModel(x0=self.x0, lambdasq=0.0001, sigma_x=0.0001, sigma_y=0.0001)
         pass
 
     def tearDown(self) -> None:

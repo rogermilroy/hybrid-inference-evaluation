@@ -3,7 +3,7 @@ import torch
 from torch.distributions import MultivariateNormal
 
 
-class LinearModel:
+class ConstantVelocityModel:
 
     def __init__(self, x0, T: float = 1., lambdasq: float = 0.5 ** 2, sigma_x: float = 0.15 ** 2, sigma_y: float = 0.15 ** 2):
         """
