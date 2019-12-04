@@ -17,7 +17,7 @@ class HybridInference(nn.Module):
 
     def __init__(self, F: tensor, H: tensor, Q: tensor, R: tensor, gamma: float):
         super(HybridInference, self).__init__()
-        self.graph = KalmanGraphicalModel(F, H, Q, R)
+        self.graph = KalmanGraphicalModel(F=F, H=H, Q=Q, R=R)
         self.gnn = KalmanGNN(h_dim=48, x_dim=F.shape[0], y_dim=R.shape[0])
         self.H = H
         self.gamma = gamma
@@ -38,7 +38,7 @@ class HybridInference(nn.Module):
         :param iterations:
         :return:
         """
-        xs = self.H.t().matmul(ys)
+        xs = self.H.T.matmul(ys.T)
 
         hx = self.gnn.initialise_hx_y(ys)
 
@@ -50,4 +50,4 @@ class HybridInference(nn.Module):
             # update the xs with messages and epsilon.
             xs = xs + self.gamma * (eps + sum(messages))
         # return the final estimate of the positions.
-        return self.H.matmul(xs)
+        return xs
