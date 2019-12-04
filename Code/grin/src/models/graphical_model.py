@@ -49,6 +49,7 @@ class KalmanGraphicalModel(nn.Module):
         :return:
         """
         res = x_curr - self.F.matmul(x_past)
+        res[0] = 0.  # from first in sequence to itself should always be 0.
         return res
 
     def diff_curr_fut(self, x_curr: tensor, x_fut: tensor) -> tensor:
@@ -60,6 +61,7 @@ class KalmanGraphicalModel(nn.Module):
         :return:
         """
         res = x_fut - self.F.matmul(x_curr)
+        res[-1] = 0.
         return res
 
     def diff_y_curr(self, ys: tensor, x_curr: tensor) -> tensor:
@@ -71,27 +73,6 @@ class KalmanGraphicalModel(nn.Module):
         """
         res = ys - self.H.matmul(x_curr)
         return res
-
-    def forward(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 50):
-        """
-        This will compute the graphical model solution to the problem.
-        Use once() to call a single iteration.
-        :param xs: estimates of the states
-        :param ys: observations
-        :param gamma: the factor by which to update the xs.
-        :param iterations: The number of iterations the iterative process should do.
-        :return:
-        """
-        x = xs
-        # iterate up to the number of iterations
-        for i in range(iterations):
-            # each time calculate the messages
-            messages = self.once(x, ys)
-            # update the xs by the sum of messages * gamma
-            x += sum(messages) * gamma
-
-        # return the result.
-        return x
 
     def once(self, xs, ys):
         """
@@ -107,13 +88,13 @@ class KalmanGraphicalModel(nn.Module):
         if xs.shape[0] == self.F.shape[0]:
             # switch to samples x dim of sample for concatenation.
             xs = xs.t()
-        if ys.shape[1] != xs[0]:
+        if ys.shape[1] != xs.shape[0]:
             # make sure that the ys are oriented dim x samples
-            ys.t()
+            ys = ys.t()
 
         # create the time shifted xs. ensure that all are oriented dims x samples now.
-        x_past = torch.cat([xs[0], xs[:-1]]).t()
-        x_future = torch.cat([xs[1:], xs[-1]]).t()
+        x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).t()
+        x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).t()
         xs = xs.t()
 
         # calculate the differences between the defined paths
@@ -125,3 +106,27 @@ class KalmanGraphicalModel(nn.Module):
 
         # return messages TODO anything else?
         return [m1, m2, m3]
+
+    def forward(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 100):
+        """
+        This will compute the graphical model solution to the problem.
+        Use once() to call a single iteration.
+        :param xs: estimates of the states
+        :param ys: observations
+        :param gamma: the factor by which to update the xs.
+        :param iterations: The number of iterations the iterative process should do.
+        :return:
+        """
+        if xs.shape[0] != self.F.shape[0]:
+            # switch to samples x dim of sample for concatenation.
+            xs = xs.t()
+        x = xs
+        # iterate up to the number of iterations
+        for i in range(iterations):
+            # each time calculate the messages
+            messages = self.once(x, ys)
+            # update the xs by the sum of messages * gamma
+            x += sum(messages) * gamma
+
+        # return the result.
+        return x
