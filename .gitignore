@@ -171,3 +171,6 @@ lib/
 msg_gen/
 srv_gen/
 .catkin_workspace
+
+## pytorch state dicts
+*.pt
