@@ -40,7 +40,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     return epoch_loss, losses
 
 
-def train_hybrid_inference(epochs, val, save_path):
+def train_hybrid_inference(epochs, val, save_path, load_model=None):
     # Check if your system supports CUDA
     use_cuda = torch.cuda.is_available()
 
@@ -71,6 +71,9 @@ def train_hybrid_inference(epochs, val, save_path):
                             R=R,
                             gamma=1e-4)
 
+    if load_model is not None:
+        model.load_state_dict(torch.load(load_model))
+
     criterion = mse_loss
     optimizer = Adam(model.parameters())
     train_loader, val_loader, test_loader = get_dataloaders()
@@ -80,12 +83,12 @@ def train_hybrid_inference(epochs, val, save_path):
                         device=computing_device)
         print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
         if val:
-            val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader, criterion=criterion)
+            val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader, criterion=criterion, device=computing_device)
             print("Epoch {} validation loss: {}".format(i + 1, val_loss))
             print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
         torch.save(model.state_dict(), save_path)
 
     # test it.
-    test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion)
+    test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion, device=computing_device)
     print("Total test loss: {}".format(test_loss))
     print("Test average loss: {}".format(test_av_loss))
