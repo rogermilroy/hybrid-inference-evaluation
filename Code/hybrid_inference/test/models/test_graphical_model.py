@@ -1,7 +1,7 @@
-from ...src.data.synthetic_position_dataset import SyntheticPositionDataset
+from src.data.synthetic_position_dataset import SyntheticPositionDataset
 from unittest import TestCase
 import torch
-from ...src.models.graphical_model import KalmanGraphicalModel
+from src.models.graphical_model import KalmanGraphicalModel
 
 
 class TestGraphicalModel(TestCase):

@@ -1,7 +1,7 @@
 from torch.utils import data
 from torch import tensor
 import torch
-from Code.grin.src.models.linear_model import ConstantVelocityModel
+from src.models.linear_model import ConstantVelocityModel
 
 
 class SyntheticPositionDataset(data.Dataset):

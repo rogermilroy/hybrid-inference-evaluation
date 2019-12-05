@@ -1,5 +1,5 @@
 from unittest import TestCase
-from ...src.training.train_hybrid_inference import train_hybrid_inference
+from src.training.train_hybrid_inference import train_hybrid_inference
 
 
 class TestTraining(TestCase):

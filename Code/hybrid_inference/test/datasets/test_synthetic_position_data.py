@@ -1,5 +1,5 @@
 from unittest import TestCase
-from ...src.data.synthetic_position_dataset import SyntheticPositionDataset
+from src.data.synthetic_position_dataset import SyntheticPositionDataset
 import torch
 
 

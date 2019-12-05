@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from ...src.data_utils import converters
+from src.data_utils import converters
 import unittest
 
 

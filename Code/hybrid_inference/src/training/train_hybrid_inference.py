@@ -1,5 +1,5 @@
-from ..models.hybrid_inference_model import HybridInference
-from ..data.synthetic_position_dataloader import get_dataloaders
+from src.models.hybrid_inference_model import HybridInference
+from src.data.synthetic_position_dataloader import get_dataloaders
 import torch
 from torch.nn.functional import mse_loss
 from torch.optim import Adam
@@ -13,6 +13,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     """
     model.train()
     epoch_loss = 0.
+    losses = list()
     for obs, states in tqdm(loader):
         obs, states = obs.to(device).squeeze(), states.to(device).squeeze()
 
@@ -33,9 +34,10 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         optimizer.step()
 
         # add to the epochs loss
+        losses.append(float(loss))
         epoch_loss += float(loss)
 
-    return epoch_loss
+    return epoch_loss, losses
 
 
 def train_hybrid_inference(epochs, val, save_path):
@@ -74,7 +76,7 @@ def train_hybrid_inference(epochs, val, save_path):
     train_loader, val_loader, test_loader = get_dataloaders()
 
     for i in range(epochs):
-        epoch_loss = train_one_epoch(model=model, loader=train_loader, optimizer=optimizer, criterion=criterion,
+        epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader, optimizer=optimizer, criterion=criterion,
                         device=computing_device)
         print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
         if val:
