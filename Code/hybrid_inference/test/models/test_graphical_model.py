@@ -1,7 +1,7 @@
-from ...src.data.synthetic_position_dataset import SyntheticPositionDataset
+from src.data.synthetic_position_dataset import SyntheticPositionDataset
 from unittest import TestCase
 import torch
-from ...src.models.graphical_model import KalmanGraphicalModel
+from src.models.graphical_model import KalmanGraphicalModel
 
 
 class TestGraphicalModel(TestCase):
@@ -9,7 +9,7 @@ class TestGraphicalModel(TestCase):
     def setUp(self) -> None:
         self.H = torch.tensor([[1., 0., 0., 0.],
                                [0., 0., 1., 0.]])
-        self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42 )
+        self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42)
         self.model = KalmanGraphicalModel(F=torch.tensor([[1., 1., 0., 0.],
                                                           [0., 1., 0., 0.],
                                                           [0., 0., 1., 1.],
@@ -36,6 +36,6 @@ class TestGraphicalModel(TestCase):
         obs, states = self.dataset[4]
         xs = self.H.T.matmul(obs.T)
         best_estimate = self.model(xs, obs, 1e-4, 100)
-        print(states - best_estimate.t())
+        print(sum(sum(states - best_estimate.t())))
         self.assertTrue(torch.allclose(states, best_estimate.t(), atol=0.9))
 
