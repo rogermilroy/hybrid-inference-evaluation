@@ -1,0 +1,9 @@
+[submodule "Code/catkin_ws/src/tum_ardrone"]
+	path = Code/catkin_ws/src/tum_ardrone
+	url = git@github.com:rogermilroy/tum_ardrone.git
+[submodule "Code/catkin_ws/src/navdata_msgs"]
+	path = Code/catkin_ws/src/navdata_msgs
+	url = git@github.com:rogermilroy/navdata_msgs.git
+[submodule "Code/catkin_ws/src/hector_quadrotor"]
+	path = Code/catkin_ws/src/hector_quadrotor
+	url = git@github.com:rogermilroy/hector_quadrotor.git

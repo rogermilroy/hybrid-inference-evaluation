@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>7</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>532</x>
+      <y>630</y>
+      <w>196</w>
+      <h>91</h>
+    </coordinates>
+    <panel_attributes>GraphDecoder
+--
+conv1: torch.nn.Conv1d
+conv1_normed: torch.nn.BatchNorm1d
+conv2: torch.nn.Conv1d
+--
+# forward(x: tensor): tensor
+ - Forward pass through network. 
+ - Leaky ReLU after each layer.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>770</x>
+      <y>595</y>
+      <w>182</w>
+      <h>91</h>
+    </coordinates>
+    <panel_attributes>GraphEncoderMLP
+--
+fc1: torch.nn.Linear
+fc1_normed: torch.nn.BatchNorm1d
+fc2: torch.nn.Linear
+--
+# forward(x: tensor): tensor
+ - Forward pass through network. 
+ - Leaky ReLU after each layer.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>532</x>
+      <y>77</y>
+      <w>147</w>
+      <h>49</h>
+    </coordinates>
+    <panel_attributes>torch.nn.Module
+--
++ forward()</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>294</x>
+      <y>413</y>
+      <w>224</w>
+      <h>126</h>
+    </coordinates>
+    <panel_attributes>KalmanGNN
+--
+past_curr_nn: GraphEncoder
+futur_curr_nn: GraphEncoder
+y_curr_nn: GraphEncoder
+node_nn: GraphEncoder
+gru: torch.nn.GRUCell
+decoder: GraphDecoder
+--
+# init_hx_y(ys: tensor): tensor
+# forward(hx: tensor, iterations: int): tensor
+ - Forward pass through networks.
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>14</x>
+      <y>413</y>
+      <w>266</w>
+      <h>112</h>
+    </coordinates>
+    <panel_attributes>KalmanGraphicalModel
+--
+F: tensor
+H: tensor
+Q: tensor
+R: tensor
+--
+# once(xs: tensor, ys: tensor): tensor
+ - Single pass of iterative graph update.
+# forward(xs: tensor, ys: tensor, iterations: int): tensor
+ - Iterations of once.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>161</x>
+      <y>224</y>
+      <w>238</w>
+      <h>91</h>
+    </coordinates>
+    <panel_attributes>HybridInference
+--
+graph: GraphicalKalmanModel
+gnn: KalmanGNN
+gamma: float
+--
+# forward(ys: tensor, iterations: int): tensor
+ - Forward pass.
+ - once() in graph, forward in gnn for iterations.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>630</x>
+      <y>119</y>
+      <w>21</w>
+      <h>525</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;730.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>427</x>
+      <y>119</y>
+      <w>196</w>
+      <h>308</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>260.0;10.0;260.0;370.0;10.0;370.0;10.0;420.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>658</x>
+      <y>119</y>
+      <w>217</w>
+      <h>490</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;480.0;290.0;480.0;290.0;680.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>140</x>
+      <y>119</y>
+      <w>455</w>
+      <h>308</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>630.0;10.0;630.0;340.0;10.0;340.0;10.0;420.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>273</x>
+      <y>119</y>
+      <w>294</w>
+      <h>119</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>400.0;10.0;400.0;110.0;10.0;110.0;10.0;150.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>98</x>
+      <y>238</y>
+      <w>77</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1</panel_attributes>
+    <additional_attributes>90.0;10.0;10.0;10.0;10.0;250.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>392</x>
+      <y>252</y>
+      <w>42</w>
+      <h>175</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;40.0;10.0;40.0;230.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>511</x>
+      <y>483</y>
+      <w>126</w>
+      <h>161</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=1</panel_attributes>
+    <additional_attributes>10.0;10.0;160.0;10.0;160.0;210.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>511</x>
+      <y>469</y>
+      <w>343</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-
+m1=1
+m2=4</panel_attributes>
+    <additional_attributes>10.0;10.0;460.0;10.0;460.0;180.0</additional_attributes>
+  </element>
+</diagram>
