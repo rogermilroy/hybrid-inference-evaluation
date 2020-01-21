@@ -15,7 +15,7 @@ class TestTraining(TestCase):
         self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42)
 
     def test_training(self):
-        train_hybrid_inference(epochs=100, val=True, save_path="./hybrid_inference_mse_params.pt",
+        train_hybrid_inference(epochs=1, val=True, save_path="./hybrid_inference_mse_params.pt",
                                loss=mse_loss)
 
     def test_trained_model(self):
@@ -33,7 +33,7 @@ class TestTraining(TestCase):
                                 gamma=1e-4)
         model.load_state_dict(torch.load("./hybrid_inference_mse_params.pt"))
         obs, states = self.dataset[4]
-        xs = self.H.T.matmul(obs.T)
+        # xs = self.H.t().matmul(obs.t())
         best_estimate = model(obs, 100)
         print(states - best_estimate.t())
 

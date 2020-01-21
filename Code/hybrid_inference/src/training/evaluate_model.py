@@ -20,6 +20,7 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
             if sample and num % sample == 0:
                 print("Predictions: ", out)
                 print("Ground truth: ", states)
+                print("Difference: ", states - out)
 
             loss = criterion(out.t(), states)
 
