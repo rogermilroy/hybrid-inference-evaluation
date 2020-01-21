@@ -3,16 +3,23 @@ import torch
 from src.models.hybrid_inference_model import HybridInference
 
 
-def evaluate_model(model, loader, criterion, device):
+def evaluate_model(model, loader, criterion, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
+    sample = None
+    if vis_example > 0:
+        sample = len(loader) / vis_example
     with torch.no_grad():
-        for obs, states in tqdm(loader):
+        for num, obs, states in tqdm(enumerate(loader)):
             obs, states = obs.to(device).squeeze(), states.to(device).squeeze()
 
             # compute the prediction.
             # print(obs.shape)
             out = model(obs)
+
+            if sample and num % sample == 0:
+                print("Predictions: ", out)
+                print("Ground truth: ", states)
 
             loss = criterion(out.t(), states)
 

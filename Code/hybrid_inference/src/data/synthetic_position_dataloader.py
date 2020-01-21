@@ -4,8 +4,8 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
 
 
-def get_dataloaders(train_samples:int = 1000, val_samples: int=200, test_samples: int = 500, sample_length: int = 10,
-                    starting_point: int = 0, extras={}):
+def get_dataloaders(train_samples: int = 1000, val_samples: int = 200, test_samples: int = 500,
+                    sample_length: int = 10, starting_point: int = 0, extras={}):
     torch.manual_seed(42)
     x0 = torch.randn(4)
     train_seed = 42
