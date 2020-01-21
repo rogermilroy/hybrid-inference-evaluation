@@ -38,7 +38,7 @@ class HybridInference(nn.Module):
         :param iterations:
         :return:
         """
-        xs = self.H.T.matmul(ys.T)
+        xs = self.H.t().matmul(ys.t())
 
         hx = self.gnn.initialise_hx_y(ys)
 

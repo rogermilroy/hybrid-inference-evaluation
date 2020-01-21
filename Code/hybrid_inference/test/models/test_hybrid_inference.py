@@ -31,6 +31,6 @@ class TestHybridInference(TestCase):
 
     def test_forward(self):
         obs, states = self.dataset[4]
-        xs = self.H.T.matmul(obs.T)
+        xs = self.H.t().matmul(obs.t())
         result = self.model(obs, iterations=100)
         print(states - result.t())
