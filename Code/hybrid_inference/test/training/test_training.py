@@ -10,8 +10,18 @@ from src.training.loss import weighted_mse_loss
 class TestTraining(TestCase):
 
     def setUp(self) -> None:
+        # Check if your system supports CUDA
+        use_cuda = torch.cuda.is_available()
+
+        # Setup GPU optimization if CUDA is supported
+        if use_cuda:
+            self.computing_device = torch.device("cuda")
+        else:  # Otherwise, train on the CPU
+            self.computing_device = torch.device("cpu")
+            extras = False
+            print("CUDA NOT supported")
         self.H = torch.tensor([[1., 0., 0., 0.],
-                               [0., 0., 1., 0.]])
+                               [0., 0., 1., 0.]]).to(self.computing_device)
         self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42)
         self.data_params = dict()
         self.data_params["train_samples"] = 1000
@@ -114,14 +124,14 @@ class TestTraining(TestCase):
         model = HybridInference(F=torch.tensor([[1., 1., 0., 0.],
                                                 [0., 1., 0., 0.],
                                                 [0., 0., 1., 1.],
-                                                [0., 0., 0., 1.]]),
+                                                [0., 0., 0., 1.]]).to(self.computing_device),
                                 H=torch.tensor([[1., 0., 0., 0.],
-                                                [0., 0., 1., 0.]]),
+                                                [0., 0., 1., 0.]]).to(self.computing_device),
                                 Q=torch.tensor([[0.05 ** 2, 0., 0., 0.],
                                                 [0., 0.05 ** 2, 0., 0.],
                                                 [0., 0., 0.05 ** 2, 0.],
-                                                [0., 0., 0., 0.05 ** 2]]),
-                                R=(0.05 ** 2) * torch.eye(2),
+                                                [0., 0., 0., 0.05 ** 2]]).to(self.computing_device),
+                                R=(0.05 ** 2) * torch.eye(2).to(self.computing_device),
                                 gamma=1e-4)
         model.load_state_dict(torch.load("./hybrid_inference_mse_params.pt"))
         obs, states = self.dataset[4]
