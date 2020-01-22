@@ -75,6 +75,8 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
     if load_model is not None:
         model.load_state_dict(torch.load(load_model))
 
+    model.to(computing_device)
+
     criterion = loss
     optimizer = Adam(model.parameters())
     if data_params:
