@@ -58,14 +58,14 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
                       [0., 0., 1., 1.],
-                      [0., 0., 0., 1.]])
+                      [0., 0., 0., 1.]]).to(computing_device)
     H = torch.tensor([[1., 0., 0., 0.],
-                      [0., 0., 1., 0.]])
+                      [0., 0., 1., 0.]]).to(computing_device)
     Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
                       [0., 0.05 ** 2, 0., 0.],
                       [0., 0., 0.05 ** 2, 0.],
-                      [0., 0., 0., 0.05 ** 2]])
-    R = (0.05 ** 2) * torch.eye(2)
+                      [0., 0., 0., 0.05 ** 2]]).to(computing_device)
+    R = (0.05 ** 2) * torch.eye(2).to(computing_device)
     model = HybridInference(F=F,
                             H=H,
                             Q=Q,
@@ -96,7 +96,7 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
         train_loader, val_loader, test_loader = get_dataloaders()
 
 
-    with open(log_path, 'a+') as log_file:
+    with open(log_path, 'w+') as log_file:
         for i in range(epochs):
             # train a simple epoch and record and print the losses.
             epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
