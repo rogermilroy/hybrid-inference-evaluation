@@ -40,7 +40,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     return epoch_loss, losses
 
 
-def train_hybrid_inference(epochs, val, save_path, loss, load_model=None, data_params={}):
+def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.txt", vis_examples=0,
+                           data_params={}, load_model=None):
     # Check if your system supports CUDA
     use_cuda = torch.cuda.is_available()
 
@@ -94,24 +95,26 @@ def train_hybrid_inference(epochs, val, save_path, loss, load_model=None, data_p
         # else use the defaults.
         train_loader, val_loader, test_loader = get_dataloaders()
 
-    for i in range(epochs):
-        # train a simple epoch and record and print the losses.
-        epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
-                                                   optimizer=optimizer, criterion=criterion,
-                                                   device=computing_device)
-        print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
 
-        if val:
-            # if we are validating then do that and print the results
-            val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
-                                                   criterion=criterion, device=computing_device)
-            print("Epoch {} validation loss: {}".format(i + 1, val_loss))
-            print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
-        # save the model at this point.
-        torch.save(model.state_dict(), save_path)
+    with open(log_path, 'a+') as log_file:
+        for i in range(epochs):
+            # train a simple epoch and record and print the losses.
+            epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
+                                                       optimizer=optimizer, criterion=criterion,
+                                                       device=computing_device)
+            print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
 
-    # test it.
-    test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion,
-                                             device=computing_device)
-    print("Total test loss: {}".format(test_loss))
-    print("Test average loss: {}".format(test_av_loss))
+            if val:
+                # if we are validating then do that and print the results
+                val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
+                                                       criterion=criterion, device=computing_device)
+                print("Epoch {} validation loss: {}".format(i + 1, val_loss))
+                print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
+            # save the model at this point.
+            torch.save(model.state_dict(), save_path)
+
+        # test it.
+        test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion,
+                                                 device=computing_device, vis_example=vis_examples)
+        print("Total test loss: {}".format(test_loss))
+        print("Test average loss: {}".format(test_av_loss))
