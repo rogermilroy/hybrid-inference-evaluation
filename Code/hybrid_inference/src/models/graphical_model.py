@@ -76,14 +76,14 @@ class KalmanGraphicalModel(nn.Module):
 
     def iterate(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 100):
         """
-                This will compute the graphical model solution to the problem.
-                Use once() to call a single iteration.
-                :param xs: estimates of the states
-                :param ys: observations
-                :param gamma: the factor by which to update the xs.
-                :param iterations: The number of iterations the iterative process should do.
-                :return:
-                """
+        This will compute the graphical model solution to the problem.
+        Use once() to call a single iteration.
+        :param xs: estimates of the states
+        :param ys: observations
+        :param gamma: the factor by which to update the xs.
+        :param iterations: The number of iterations the iterative process should do.
+        :return:
+        """
         if xs.shape[0] != self.F.shape[0]:
             # switch to samples x dim of sample for concatenation.
             xs = xs.t()
