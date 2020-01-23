@@ -74,7 +74,31 @@ class KalmanGraphicalModel(nn.Module):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def once(self, xs, ys):
+    def iterate(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 100):
+        """
+                This will compute the graphical model solution to the problem.
+                Use once() to call a single iteration.
+                :param xs: estimates of the states
+                :param ys: observations
+                :param gamma: the factor by which to update the xs.
+                :param iterations: The number of iterations the iterative process should do.
+                :return:
+                """
+        if xs.shape[0] != self.F.shape[0]:
+            # switch to samples x dim of sample for concatenation.
+            xs = xs.t()
+        x = xs
+        # iterate up to the number of iterations
+        for i in range(iterations):
+            # each time calculate the messages
+            messages = self.forward(x, ys)
+            # update the xs by the sum of messages * gamma
+            x += sum(messages) * gamma
+
+        # return the result.
+        return x
+
+    def forward(self, xs: tensor, ys: tensor):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
@@ -107,26 +131,3 @@ class KalmanGraphicalModel(nn.Module):
         # return messages TODO anything else?
         return [m1, m2, m3]
 
-    def forward(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 100):
-        """
-        This will compute the graphical model solution to the problem.
-        Use once() to call a single iteration.
-        :param xs: estimates of the states
-        :param ys: observations
-        :param gamma: the factor by which to update the xs.
-        :param iterations: The number of iterations the iterative process should do.
-        :return:
-        """
-        if xs.shape[0] != self.F.shape[0]:
-            # switch to samples x dim of sample for concatenation.
-            xs = xs.t()
-        x = xs
-        # iterate up to the number of iterations
-        for i in range(iterations):
-            # each time calculate the messages
-            messages = self.once(x, ys)
-            # update the xs by the sum of messages * gamma
-            x += sum(messages) * gamma
-
-        # return the result.
-        return x
