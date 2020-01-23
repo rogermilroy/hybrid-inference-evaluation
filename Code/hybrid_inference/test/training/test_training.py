@@ -16,6 +16,8 @@ class TestTraining(TestCase):
         # Setup GPU optimization if CUDA is supported
         if use_cuda:
             self.computing_device = torch.device("cuda")
+            extras = {"num_workers": 4, "pin_memory": True}
+            print("Using CUDA")
         else:  # Otherwise, train on the CPU
             self.computing_device = torch.device("cpu")
             extras = False
@@ -29,7 +31,7 @@ class TestTraining(TestCase):
         self.data_params["test_samples"] = 500
         self.data_params["sample_length"] = 10
         self.data_params["starting_point"] = 1
-        self.data_params["extras"] = {"num_workers": 4, "pin_memory": True}
+        self.data_params["extras"] = extras
 
     def test_training_size_len(self):
         """
@@ -43,7 +45,8 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len(self):
@@ -57,7 +60,8 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start(self):
@@ -71,7 +75,8 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["train_samples"] *= 10
 
     def test_training_size_len_weighted(self):
@@ -86,7 +91,8 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len_weighted(self):
@@ -101,7 +107,8 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start_weighted(self):
@@ -117,26 +124,29 @@ class TestTraining(TestCase):
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
-                                   data_params=self.data_params)
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device)
             self.data_params["train_samples"] *= 10
 
-    def test_trained_model(self):
-        model = HybridInference(F=torch.tensor([[1., 1., 0., 0.],
-                                                [0., 1., 0., 0.],
-                                                [0., 0., 1., 1.],
-                                                [0., 0., 0., 1.]]).to(self.computing_device),
-                                H=torch.tensor([[1., 0., 0., 0.],
-                                                [0., 0., 1., 0.]]).to(self.computing_device),
-                                Q=torch.tensor([[0.05 ** 2, 0., 0., 0.],
-                                                [0., 0.05 ** 2, 0., 0.],
-                                                [0., 0., 0.05 ** 2, 0.],
-                                                [0., 0., 0., 0.05 ** 2]]).to(self.computing_device),
-                                R=(0.05 ** 2) * torch.eye(2).to(self.computing_device),
-                                gamma=1e-4)
-        model.load_state_dict(torch.load("./hybrid_inference_mse_params.pt"))
-        obs, states = self.dataset[4]
-        best_estimate = model(obs, 100)
-        print(states - best_estimate.t())
+    # def test_trained_model(self):
+    #     model = HybridInference(F=torch.tensor([[1., 1., 0., 0.],
+    #                                             [0., 1., 0., 0.],
+    #                                             [0., 0., 1., 1.],
+    #                                             [0., 0., 0., 1.]]).to(self.computing_device),
+    #                             H=torch.tensor([[1., 0., 0., 0.],
+    #                                             [0., 0., 1., 0.]]).to(self.computing_device),
+    #                             Q=torch.tensor([[0.05 ** 2, 0., 0., 0.],
+    #                                             [0., 0.05 ** 2, 0., 0.],
+    #                                             [0., 0., 0.05 ** 2, 0.],
+    #                                             [0., 0., 0., 0.05 ** 2]]).to(self.computing_device),
+    #                             R=(0.05 ** 2) * torch.eye(2).to(self.computing_device),
+    #                             gamma=1e-4)
+    #     model.load_state_dict(torch.load("./hybrid_inference_mse_params.pt"))
+    #     model.to(self.computing_device)
+    #     obs, states = self.dataset[4]
+    #     obs, states = obs.to(self.computing_device), states.to(self.computing_device)
+    #     best_estimate = model(obs, 100)
+    #     print(states - best_estimate.t())
 
     # def test_continue_training(self):
     #     train_hybrid_inference(epochs=1, val=False, loss=mse_loss,

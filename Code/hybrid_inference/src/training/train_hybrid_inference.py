@@ -41,19 +41,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
 
 
 def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.txt", vis_examples=0,
-                           data_params={}, load_model=None):
-    # Check if your system supports CUDA
-    use_cuda = torch.cuda.is_available()
-
-    # Setup GPU optimization if CUDA is supported
-    if use_cuda:
-        computing_device = torch.device("cuda")
-        extras = {"num_workers": 3, "pin_memory": True}
-        print("CUDA is supported")
-    else:  # Otherwise, train on the CPU
-        computing_device = torch.device("cpu")
-        extras = False
-        print("CUDA NOT supported")
+                           data_params={}, load_model=None, computing_device=torch.device("cpu")):
 
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
@@ -77,8 +65,11 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
 
     model.to(computing_device)
 
+    print("Model on CUDA?", next(model.parameters()).is_cuda)
+
     criterion = loss
     optimizer = Adam(model.parameters())
+
     if data_params:
         # if we have specified specific training parameters use them
         train_samples = data_params["train_samples"]
@@ -96,7 +87,6 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
     else:
         # else use the defaults.
         train_loader, val_loader, test_loader = get_dataloaders()
-
 
     with open(log_path, 'w+') as log_file:
         for i in range(epochs):
