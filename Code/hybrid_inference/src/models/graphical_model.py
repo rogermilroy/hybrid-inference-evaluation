@@ -121,12 +121,18 @@ class KalmanGraphicalModel(nn.Module):
         x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).t()
         xs = xs.t()
 
+        print("xs",xs.is_cuda)
+
         # calculate the differences between the defined paths
         # that is from xt-1 to xt, from xt+1 to xt and from yt to xt.
         # then calculate the messages
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
         m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
+
+        print("m1",m1.is_cuda)
+        print("m2", m2.is_cuda)
+        print("m3", m3.is_cuda)
 
         # return messages TODO anything else?
         return [m1, m2, m3]

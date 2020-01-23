@@ -57,6 +57,13 @@ class KalmanGNN(nn.Module):
         hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t()
         hx = hx.t()
 
+        print("hx",hx.is_cuda)
+        print("hx fut",hx_future.is_cuda)
+        print("hx past",hx_past.is_cuda)
+        print("past graph",past_curr_mess.is_cuda)
+        print("future graph",fut_curr_mess.is_cuda)
+        print("y graph",y_curr_mess.is_cuda)
+
         # pass compute edge encodings.
         past_curr_edge = self.past_curr_nn(torch.cat([hx_past, hx, past_curr_mess]).t()).t()
         fut_curr_edge = self.future_curr_nn(torch.cat([hx_future, hx, fut_curr_mess]).t()).t()
