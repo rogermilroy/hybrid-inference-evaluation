@@ -44,7 +44,7 @@ class HybridInference(nn.Module):
 
         for i in range(iterations):
             # compute the graphical model messages
-            messages = self.graph.once(xs, ys)
+            messages = self.graph(xs, ys)
             # compute the hidden states and epsilon correction
             eps, hx = self.gnn(hx, messages)
             # update the xs with messages and epsilon.
