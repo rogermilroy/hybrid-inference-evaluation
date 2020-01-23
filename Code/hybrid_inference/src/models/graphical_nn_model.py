@@ -52,9 +52,10 @@ class KalmanGNN(nn.Module):
         if hx.shape[0] == self.h_dim:
             hx = hx.t()
 
+        device = hx.device
         # construct the edges to pass through the relevant models
-        hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t()
-        hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t()
+        hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t().to(device)
+        hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t().to(device)
         hx = hx.t()
 
         print("hx",hx.is_cuda)
