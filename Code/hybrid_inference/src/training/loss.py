@@ -9,7 +9,8 @@ def weighted_mse_loss(predictions, targets):
     :param targets: A tensor of target values.
     :return: Tensor a single number tensor of the total loss.
     """
-    weights = torch.arange(start=0, end=1. + 1e-7, step=1/len(predictions))
+    device = predictions.device
+    weights = torch.arange(start=0, end=1. + 1e-7, step=1/len(predictions)).to(device)
     print("Weight len:", len(weights))
     print("Pred len:", len(predictions))
     loss = 0.

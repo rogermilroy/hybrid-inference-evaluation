@@ -14,7 +14,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     model.train()
     epoch_loss = 0.
     losses = list()
-    for obs, states in tqdm(loader):
+    for obs, states in loader:
         obs, states = obs.to(device).squeeze(), states.to(device).squeeze()
 
         # zero the optimizers gradients from the previous iteration.

@@ -10,7 +10,7 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
     if vis_example > 0:
         sample = len(loader) / vis_example
     with torch.no_grad():
-        for num, obs, states in tqdm(enumerate(loader)):
+        for num, (obs, states) in enumerate(loader):
             obs, states = obs.to(device).squeeze(), states.to(device).squeeze()
 
             # compute the prediction.
