@@ -16,7 +16,7 @@ class TestTraining(TestCase):
         # Setup GPU optimization if CUDA is supported
         if use_cuda:
             self.computing_device = torch.device("cuda")
-            extras = {"num_workers": 4, "pin_memory": True}
+            extras = {"num_workers": 7, "pin_memory": True}
             print("Using CUDA")
         else:  # Otherwise, train on the CPU
             self.computing_device = torch.device("cpu")
