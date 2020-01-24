@@ -52,18 +52,10 @@ class KalmanGNN(nn.Module):
         if hx.shape[0] == self.h_dim:
             hx = hx.t()
 
-        device = hx.device
         # construct the edges to pass through the relevant models
-        hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t().to(device)
-        hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t().to(device)
+        hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t()
+        hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t()
         hx = hx.t()
-
-        print("hx",hx.is_cuda)
-        print("hx fut",hx_future.is_cuda)
-        print("hx past",hx_past.is_cuda)
-        print("past graph",past_curr_mess.is_cuda)
-        print("future graph",fut_curr_mess.is_cuda)
-        print("y graph",y_curr_mess.is_cuda)
 
         # pass compute edge encodings.
         past_curr_edge = self.past_curr_nn(torch.cat([hx_past, hx, past_curr_mess]).t()).t()
@@ -90,7 +82,7 @@ class KalmanGNN(nn.Module):
         :param ys: observations?
         :return:
         """
-        print("ys",ys.is_cuda)
+        device = ys.device
 
         if ys.shape[0] == self.y_dim:
             # turn from dims x samples to samples x dims
@@ -109,5 +101,5 @@ class KalmanGNN(nn.Module):
         # save as self.hy
         self.hy = self.hy_initialiser(hy_in).squeeze(0)  # needs squeezing as convs only take 3d inputs
         hx = torch.randn((self.h_dim, num_samples))
-        # TODO add to(device)
-        return hx
+
+        return hx.to(device)
