@@ -90,6 +90,8 @@ class KalmanGNN(nn.Module):
         :param ys: observations?
         :return:
         """
+        print("ys",ys.is_cuda)
+
         if ys.shape[0] == self.y_dim:
             # turn from dims x samples to samples x dims
             ys = ys.t()
@@ -107,5 +109,5 @@ class KalmanGNN(nn.Module):
         # save as self.hy
         self.hy = self.hy_initialiser(hy_in).squeeze(0)  # needs squeezing as convs only take 3d inputs
         hx = torch.randn((self.h_dim, num_samples))
-
+        # TODO add to(device)
         return hx
