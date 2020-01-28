@@ -77,12 +77,16 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
         test_samples = data_params["test_samples"]
         sample_length = data_params["sample_length"]
         starting_point = data_params["starting_point"]
+        batch_size = data_params["batch_size"]
+        shuffle = data_params["shuffle"]
         extras = data_params["extras"]
         train_loader, val_loader, test_loader = get_dataloaders(train_samples=train_samples,
                                                                 val_samples=val_samples,
                                                                 test_samples=test_samples,
                                                                 sample_length=sample_length,
                                                                 starting_point=starting_point,
+                                                                batch_size=batch_size,
+                                                                shuffle=shuffle,
                                                                 extras=extras)
     else:
         # else use the defaults.

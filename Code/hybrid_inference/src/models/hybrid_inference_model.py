@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from torch import tensor
 from .graphical_model import KalmanGraphicalModel
@@ -38,7 +39,10 @@ class HybridInference(nn.Module):
         :param iterations:
         :return:
         """
-        xs = self.H.t().matmul(ys.t())
+        if len(ys.shape) == 3:
+            xs = self.H.t().matmul(torch.transpose(ys, 1, 2))
+        else:
+            xs = self.H.t().matmul(ys.t())
 
         hx = self.gnn.initialise_hx_y(ys)
 
@@ -48,6 +52,6 @@ class HybridInference(nn.Module):
             # compute the hidden states and epsilon correction
             eps, hx = self.gnn(hx, messages)
             # update the xs with messages and epsilon.
-            xs = xs + self.gamma * (eps + sum(messages))
+            xs = xs + self.gamma * (eps + sum(messages).permute(2, 0, 1))
         # return the final estimate of the positions.
         return xs

@@ -24,6 +24,12 @@ class GraphEncoderMLP(nn.Module):
         init.xavier_normal_(self.fc2.weight)
 
     def forward(self, x):
-        x = functional.leaky_relu(self.fc1_normed(self.fc1(x)))
-        x = functional.leaky_relu(self.fc2(x))
+        if len(x.shape) == 3:
+            x = self.fc1(x).permute(0, 2, 1)
+            x = self.fc1_normed(x).permute(0, 2, 1)
+            x = functional.leaky_relu(x)
+            x = functional.leaky_relu(self.fc2(x))
+        else:
+            x = functional.leaky_relu(self.fc1_normed(self.fc1(x)))
+            x = functional.leaky_relu(self.fc2(x))
         return x

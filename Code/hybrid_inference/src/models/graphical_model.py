@@ -49,7 +49,6 @@ class KalmanGraphicalModel(nn.Module):
         :return:
         """
         res = x_curr - self.F.matmul(x_past)
-        res[0] = 0.  # from first in sequence to itself should always be 0.
         return res
 
     def diff_curr_fut(self, x_curr: tensor, x_fut: tensor) -> tensor:
@@ -61,7 +60,6 @@ class KalmanGraphicalModel(nn.Module):
         :return:
         """
         res = x_fut - self.F.matmul(x_curr)
-        res[-1] = 0.
         return res
 
     def diff_y_curr(self, ys: tensor, x_curr: tensor) -> tensor:
@@ -109,24 +107,42 @@ class KalmanGraphicalModel(nn.Module):
         :return:
         """
         # check dimensions
-        if xs.shape[0] == self.F.shape[0]:
-            # switch to samples x dim of sample for concatenation.
+        if len(xs.shape) == 3:
+            if xs.shape[1] == self.F.shape[0]:
+                # switch to samples x dim of sample for concatenation.
+                xs = torch.transpose(xs, 1, 2)
+            if ys.shape[2] != xs.shape[1]:
+                # make sure that the ys are oriented samples x dim x batch
+                ys = ys.permute(1, 0, 2)
+
+            xs = torch.transpose(xs, 0, 1)
+            # create the time shifted xs. ensure that all are oriented dims x samples now.
+            x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).permute(0, 2, 1)
+            x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).permute(0, 2, 1)
+            xs = torch.transpose(xs, 1, 2)
+
+            m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs)).permute(1, 0, 2)
+            m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future)).permute(1, 0, 2)
+            m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs)).permute(1, 0, 2)
+        else:
+            if xs.shape[0] == self.F.shape[0]:
+                # switch to samples x dim of sample for concatenation.
+                xs = xs.t()
+            if ys.shape[1] != xs.shape[0]:
+                # make sure that the ys are oriented dim x samples
+                ys = ys.t()
+
+            # create the time shifted xs. ensure that all are oriented dims x samples now.
+            x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).t()
+            x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).t()
             xs = xs.t()
-        if ys.shape[1] != xs.shape[0]:
-            # make sure that the ys are oriented dim x samples
-            ys = ys.t()
 
-        # create the time shifted xs. ensure that all are oriented dims x samples now.
-        x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).t()
-        x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).t()
-        xs = xs.t()
-
-        # calculate the differences between the defined paths
-        # that is from xt-1 to xt, from xt+1 to xt and from yt to xt.
-        # then calculate the messages
-        m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
-        m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
-        m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
+            # calculate the differences between the defined paths
+            # that is from xt-1 to xt, from xt+1 to xt and from yt to xt.
+            # then calculate the messages
+            m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
+            m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
+            m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
         # return messages TODO anything else?
         return [m1, m2, m3]
