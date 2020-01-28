@@ -48,45 +48,35 @@ class KalmanGNN(nn.Module):
         :param graphical_messages:
         :return:
         """
+        # messages batch x feat x samples
         past_curr_mess, fut_curr_mess, y_curr_mess = graphical_messages
         if len(hx.shape) == 3:
-            # check dims and transpose if necessary
-            if hx.shape[1] == self.h_dim:
-                # from batch x dim x samples to batch x samples x dim
-                hx = hx.permute(1, 0, 2)
+            # TODO work out dimension checking, for now just do it right.
+            # from batch x feat x samples to samples x batch x feat
+            hx = hx.permute(2, 0, 1)
 
-            # now samples x batch x dim
-            hx = torch.transpose(hx, 0, 1)
-            # create the time shifted xs. ensure that all are oriented batch x samples x dim now.
+            # create the time shifted xs. ensure that all are oriented batch x samples x feat now.
             hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).permute(1, 2, 0)
             hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).permute(1, 2, 0)
             hx = hx.permute(1, 2, 0)
 
-            past_curr_edge = torch.transpose(
-                                self.past_curr_nn(
-                                    torch.cat([hx_past, hx, past_curr_mess]).permute(2, 1, 0)),
-                             1, 2)
-            fut_curr_edge = torch.transpose(
-                                self.future_curr_nn(
-                                    torch.cat([hx_future, hx, fut_curr_mess]).permute(2, 1, 0)),
-                            1, 2)
-            y_curr_edge = torch.transpose(
-                            self.y_curr_nn(
-                                torch.cat([self.hy.permute(1, 2, 0), hx, y_curr_mess]).permute(2,
-                                                                                               1, 0)),
-                          1, 2)
+            past_curr_edge = self.past_curr_nn(
+                                    torch.cat([hx_past, hx, past_curr_mess], dim=1).permute(0, 2, 1))
 
-            # sum edge encodings?
+            fut_curr_edge = self.future_curr_nn(
+                                    torch.cat([hx_future, hx, fut_curr_mess], dim=1).permute(0, 2, 1))
+
+            y_curr_edge = self.y_curr_nn(
+                                torch.cat([self.hy, hx, y_curr_mess], dim=1).permute(0, 2, 1))
+            # still batch x samples x features
+
+            # sum edge encodings
             # pass through node encoder
-            U = torch.transpose(
-                    self.node_nn(
-                        torch.transpose(
-                            sum([past_curr_edge, fut_curr_edge, y_curr_edge]),
-                        1, 2)),
-                1, 2)
+            U = self.node_nn(
+                        sum([past_curr_edge, fut_curr_edge, y_curr_edge]))
 
             # pass through gru
-            h = self.gru(U.permute(0, 2, 1), hx.permute(2, 1, 0))
+            h = self.gru(U, hx.permute(0, 2, 1))
             h = h.permute(0, 2, 1)
 
             eps = self.decoder(h)
@@ -156,11 +146,10 @@ class KalmanGNN(nn.Module):
 
         # concatenate and  unsqueeze
         if len(ys.shape) == 3:
-            hy_in = torch.transpose(
-                        torch.cat([torch.transpose(diff1, 1, 2), torch.transpose(diff2, 1, 2)]),
-                    0, 1)
+            hy_in = torch.cat([diff1, diff2], dim=2).permute(0, 2, 1)
             # save as self.hy
-            self.hy = self.hy_initialiser(hy_in)
+            self.hy = self.hy_initialiser(hy_in)#.permute(1, 2, 0) TODO see if reshaping here is
+            # better
             hx = torch.randn((batch_size, self.h_dim, num_samples), device=device)
         else:
             # unsqueeze as conv only takes 3d inputs.

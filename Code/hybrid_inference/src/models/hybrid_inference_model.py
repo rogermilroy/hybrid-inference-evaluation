@@ -52,6 +52,6 @@ class HybridInference(nn.Module):
             # compute the hidden states and epsilon correction
             eps, hx = self.gnn(hx, messages)
             # update the xs with messages and epsilon.
-            xs = xs + self.gamma * (eps + sum(messages).permute(2, 0, 1))
+            xs = xs + self.gamma * (eps + sum(messages))
         # return the final estimate of the positions.
         return xs

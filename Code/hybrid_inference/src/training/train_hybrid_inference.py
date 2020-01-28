@@ -15,7 +15,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     epoch_loss = 0.
     losses = list()
     for obs, states in loader:
-        obs, states = obs.to(device).squeeze(), states.to(device).squeeze()
+        obs, states = obs.to(device), states.to(device)
 
         # zero the optimizers gradients from the previous iteration.
         optimizer.zero_grad()
@@ -25,7 +25,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
         out = model(obs)
 
         # compute the loss
-        loss = criterion(out.t(), states)
+        loss = criterion(out.permute(0, 2, 1), states)
 
         # propagate the loss back through the network.
         loss.backward()

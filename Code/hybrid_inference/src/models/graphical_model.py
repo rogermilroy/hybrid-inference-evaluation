@@ -100,30 +100,30 @@ class KalmanGraphicalModel(nn.Module):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
-        xs should be state dimensions x number of xs
-        ys should be measurement dimensions x number of xs = number of ys
-        :param xs: estimates of the state?
+        xs should be batch x feat x samples
+        ys should be batch x feat x samples
+        :param xs: estimates of the state
         :param ys: observations.
         :return:
         """
         # check dimensions
         if len(xs.shape) == 3:
-            if xs.shape[1] == self.F.shape[0]:
-                # switch to samples x dim of sample for concatenation.
-                xs = torch.transpose(xs, 1, 2)
-            if ys.shape[2] != xs.shape[1]:
-                # make sure that the ys are oriented samples x dim x batch
-                ys = ys.permute(1, 0, 2)
+            # TODO check each dim is what it should be. For now just do it right.
+            # change to samples x batch x feat for manipulation.
+            xs = xs.permute(2, 0, 1)
 
-            xs = torch.transpose(xs, 0, 1)
-            # create the time shifted xs. ensure that all are oriented dims x samples now.
-            x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).permute(0, 2, 1)
-            x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).permute(0, 2, 1)
-            xs = torch.transpose(xs, 1, 2)
+            # create the time shifted xs. ensure that all are oriented batch x feat x samples now.
+            x_past = torch.cat([xs[0].unsqueeze(0), xs[:-1]]).permute(1, 2, 0)
+            x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).permute(1, 2, 0)
+            xs = xs.permute(1, 2, 0)
 
-            m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs)).permute(1, 0, 2)
-            m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future)).permute(1, 0, 2)
-            m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs)).permute(1, 0, 2)
+            # make sure that the ys are oriented batch x feat x samples
+            ys = ys.permute(0, 2, 1)
+
+            # result dims batch x feat x samples
+            m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
+            m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
+            m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
         else:
             if xs.shape[0] == self.F.shape[0]:
                 # switch to samples x dim of sample for concatenation.
@@ -144,6 +144,5 @@ class KalmanGraphicalModel(nn.Module):
             m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
             m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
-        # return messages TODO anything else?
+        # return messages
         return [m1, m2, m3]
-
