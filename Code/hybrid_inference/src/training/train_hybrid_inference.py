@@ -7,7 +7,7 @@ from tqdm import tqdm
 from .evaluate_model import evaluate_model
 
 
-def train_one_epoch(model, loader, optimizer, criterion, device):
+def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
     """
     Method to train for one epoch.
     """
@@ -22,10 +22,13 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
 
         # compute the prediction.
         # print(obs.shape)
-        out = model(obs)
+        out, out_list = model(obs)
 
         # compute the loss
-        loss = criterion(out.permute(0, 2, 1), states)
+        if weighted:
+            loss = criterion(out_list, states)
+        else:
+            loss = criterion(out.permute(0, 2, 1), states)
 
         # propagate the loss back through the network.
         loss.backward()
@@ -40,7 +43,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device):
     return epoch_loss, losses
 
 
-def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.txt", vis_examples=0,
+def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./training.txt",
+                           vis_examples=0,
                            data_params={}, load_model=None, computing_device=torch.device("cpu")):
 
     F = torch.tensor([[1., 1., 0., 0.],
@@ -97,7 +101,7 @@ def train_hybrid_inference(epochs, val, loss, save_path, log_path="./training.tx
             # train a simple epoch and record and print the losses.
             epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
                                                        optimizer=optimizer, criterion=criterion,
-                                                       device=computing_device)
+                                                       device=computing_device, weighted=weighted)
             print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
 
             if val:

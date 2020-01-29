@@ -44,7 +44,7 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./train_len" + str(self.data_params["train_samples"]) + \
                    "_mse_start0_seq10"
-            train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -59,7 +59,7 @@ class TestTraining(TestCase):
         """
         for i in range(3):
             path = "./train_len1000_mse_start0_seq" + str(self.data_params["sample_length"])
-            train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -74,7 +74,7 @@ class TestTraining(TestCase):
         """
         for i in range(4):
             path = "./train_len1000_mse_start"+str(self.data_params["starting_point"])+"_seq10"
-            train_hybrid_inference(epochs=100, val=True, loss=mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -90,7 +90,7 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./weighted_train_len" + str(self.data_params["train_samples"]) + \
                    "_mse_start0_seq10"
-            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -106,7 +106,7 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./weighted_train_len1000_mse_start0_seq" + str(self.data_params[
                                                                        "sample_length"])
-            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -123,7 +123,7 @@ class TestTraining(TestCase):
             path = "./weighted_train_len1000_mse_start" + str(self.data_params["starting_point"])\
                    + \
                    "_seq10"
-            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
+            train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
@@ -151,10 +151,10 @@ class TestTraining(TestCase):
     #     print(states - best_estimate.t())
 
     # def test_continue_training(self):
-    #     train_hybrid_inference(epochs=1, val=False, loss=mse_loss,
+    #     train_hybrid_inference(epochs=1, val=False, loss=mse_loss, weighted=False
     #                            save_path="./hybrid_inference_mse_params.pt",
     #                            load_model="./hybrid_inference_mse_params.pt")
     #
     # def test_weighted_loss(self):
-    #     train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss,
+    #     train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=False
     #                            save_path="./hybrid_inference_weighted_params.pt")

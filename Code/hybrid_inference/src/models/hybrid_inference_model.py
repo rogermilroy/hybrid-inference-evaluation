@@ -46,6 +46,8 @@ class HybridInference(nn.Module):
 
         hx = self.gnn.initialise_hx_y(ys)
 
+        iter_preds = list()
+
         for i in range(iterations):
             # compute the graphical model messages
             messages = self.graph(xs, ys)
@@ -53,5 +55,6 @@ class HybridInference(nn.Module):
             eps, hx = self.gnn(hx, messages)
             # update the xs with messages and epsilon.
             xs = xs + self.gamma * (eps + sum(messages))
+            iter_preds.append(xs)
         # return the final estimate of the positions.
-        return xs
+        return xs, torch.stack(iter_preds)
