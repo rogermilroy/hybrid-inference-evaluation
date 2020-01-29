@@ -107,7 +107,8 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
             if val:
                 # if we are validating then do that and print the results
                 val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
-                                                       criterion=criterion, device=computing_device)
+                                                       criterion=criterion,
+                                                       weighted=weighted ,device=computing_device)
                 print("Epoch {} validation loss: {}".format(i + 1, val_loss))
                 print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
             # save the model at this point.
@@ -115,6 +116,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
 
         # test it.
         test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion,
-                                                 device=computing_device, vis_example=vis_examples)
+                                                 weighted=weighted, device=computing_device,
+                                                          vis_example=vis_examples)
         print("Total test loss: {}".format(test_loss))
         print("Test average loss: {}".format(test_av_loss))
