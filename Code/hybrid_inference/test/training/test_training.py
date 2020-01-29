@@ -5,6 +5,7 @@ from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataset import SyntheticPositionDataset
 from torch.nn.functional import mse_loss
 from src.training.loss import weighted_mse_loss
+from time import time
 
 
 class TestTraining(TestCase):
@@ -44,11 +45,13 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./train_len" + str(self.data_params["train_samples"]) + \
                    "_mse_start0_seq10"
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len(self):
@@ -59,11 +62,13 @@ class TestTraining(TestCase):
         """
         for i in range(3):
             path = "./train_len1000_mse_start0_seq" + str(self.data_params["sample_length"])
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start(self):
@@ -74,11 +79,13 @@ class TestTraining(TestCase):
         """
         for i in range(4):
             path = "./train_len1000_mse_start"+str(self.data_params["starting_point"])+"_seq10"
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=mse_loss, weighted=False,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["train_samples"] *= 10
 
     def test_training_size_len_weighted(self):
@@ -90,11 +97,13 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./weighted_train_len" + str(self.data_params["train_samples"]) + \
                    "_mse_start0_seq10"
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len_weighted(self):
@@ -106,11 +115,13 @@ class TestTraining(TestCase):
         for i in range(3):
             path = "./weighted_train_len1000_mse_start0_seq" + str(self.data_params[
                                                                        "sample_length"])
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start_weighted(self):
@@ -123,11 +134,13 @@ class TestTraining(TestCase):
             path = "./weighted_train_len1000_mse_start" + str(self.data_params["starting_point"])\
                    + \
                    "_seq10"
+            start = time()
             train_hybrid_inference(epochs=100, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device)
+            print("Time taken: ", time() - start)
             self.data_params["train_samples"] *= 10
 
     # def test_trained_model(self):

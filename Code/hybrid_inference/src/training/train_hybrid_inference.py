@@ -72,7 +72,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
     print("Model on CUDA?", next(model.parameters()).is_cuda)
 
     criterion = loss
-    optimizer = Adam(model.parameters())
+    optimizer = Adam(model.parameters(), lr=0.0001)  # reduce the learning rate to 0.0001 from 0.001
 
     if data_params:
         # if we have specified specific training parameters use them
