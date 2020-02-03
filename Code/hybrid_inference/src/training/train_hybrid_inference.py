@@ -50,14 +50,14 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
                       [0., 0., 1., 1.],
-                      [0., 0., 0., 1.]]).to(computing_device)
+                      [0., 0., 0., 1.]], device=computing_device)
     H = torch.tensor([[1., 0., 0., 0.],
-                      [0., 0., 1., 0.]]).to(computing_device)
+                      [0., 0., 1., 0.]], device=computing_device)
     Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
                       [0., 0.05 ** 2, 0., 0.],
                       [0., 0., 0.05 ** 2, 0.],
-                      [0., 0., 0., 0.05 ** 2]]).to(computing_device)
-    R = (0.05 ** 2) * torch.eye(2).to(computing_device)
+                      [0., 0., 0., 0.05 ** 2]], device=computing_device)
+    R = (0.05 ** 2) * torch.eye(2, device=computing_device)
     model = HybridInference(F=F,
                             H=H,
                             Q=Q,
