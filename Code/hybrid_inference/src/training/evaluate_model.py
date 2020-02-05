@@ -31,7 +31,7 @@ def evaluate_model(model, loader, criterion, weighted, device, vis_example=0):
             # add to the epochs loss
             epoch_loss += float(loss)
 
-    return epoch_loss, epoch_loss / len(loader)
+    return epoch_loss, (epoch_loss / len(loader)) / loader.batch_size
 
 
 def compare_models(path_to_model1: str, path_to_model2: str):
