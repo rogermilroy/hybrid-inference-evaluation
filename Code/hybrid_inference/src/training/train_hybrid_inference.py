@@ -2,6 +2,7 @@ from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataloader import get_dataloaders
 import torch
 from torch.optim import Adam
+from torch.nn.functional import mse_loss
 from time import time
 from tqdm import tqdm
 from .evaluate_model import evaluate_model, evaluate_model_input
@@ -136,11 +137,11 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                                 sample_length=sample_length,
                                                                 starting_point=starting_point,
                                                                 batch_size=batch_size,
-                                                                input=input,
+                                                                inputs=inputs,
                                                                 extras=extras)
     else:
         # else use the defaults.
-        train_loader, val_loader, test_loader = get_dataloaders(input=input)
+        train_loader, val_loader, test_loader = get_dataloaders(inputs=inputs)
 
     with open(log_path, 'w+') as log_file:
         start = time()
@@ -164,12 +165,10 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                 # if we are validating then do that and print the results
                 if inputs:
                     val_loss, val_av_loss = evaluate_model_input(model=model, loader=val_loader,
-                                                       criterion=criterion,
-                                                       weighted=weighted, device=computing_device)
+                                                       criterion=mse_loss, device=computing_device)
                 else:
                     val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
-                                                           criterion=criterion,
-                                                           weighted=weighted,
+                                                           criterion=mse_loss,
                                                            device=computing_device)
                 print("Epoch {} validation loss: {}".format(i + 1, val_loss))
                 print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
@@ -182,15 +181,13 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
         if inputs:
             test_loss, test_av_loss = evaluate_model_input(model=model,
                                                            loader=test_loader,
-                                                           criterion=criterion,
-                                                           weighted=weighted,
+                                                           criterion=mse_loss,
                                                            device=computing_device,
                                                            vis_example=vis_examples)
         else:
             test_loss, test_av_loss = evaluate_model(model=model,
                                                      loader=test_loader,
-                                                     criterion=criterion,
-                                                     weighted=weighted,
+                                                     criterion=mse_loss,
                                                      device=computing_device,
                                                      vis_example=vis_examples)
         print("Time taken: {}".format(time() - start))

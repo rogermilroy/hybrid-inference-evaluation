@@ -5,7 +5,7 @@ from src.data.synthetic_position_dataloader import get_dataloaders
 from torch.nn.functional import mse_loss
 
 
-def evaluate_model_input(model, loader, criterion, weighted, device, vis_example=0):
+def evaluate_model_input(model, loader, criterion, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
     sample = None
@@ -23,10 +23,7 @@ def evaluate_model_input(model, loader, criterion, weighted, device, vis_example
                 print("Ground truth: ", states)
                 print("Difference: ", states - out)
 
-            if weighted:
-                loss = criterion(out_list, states)
-            else:
-                loss = criterion(out.permute(0, 2, 1), states)
+            loss = criterion(out.permute(0, 2, 1), states)
 
             # add to the epochs loss
             epoch_loss += float(loss)
@@ -34,7 +31,7 @@ def evaluate_model_input(model, loader, criterion, weighted, device, vis_example
     return epoch_loss, (epoch_loss / len(loader)) / loader.batch_size
 
 
-def evaluate_model(model, loader, criterion, weighted, device, vis_example=0):
+def evaluate_model(model, loader, criterion, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
     sample = None
@@ -52,10 +49,7 @@ def evaluate_model(model, loader, criterion, weighted, device, vis_example=0):
                 print("Ground truth: ", states)
                 print("Difference: ", states - out)
 
-            if weighted:
-                loss = criterion(out_list, states)
-            else:
-                loss = criterion(out.permute(0, 2, 1), states)
+            loss = criterion(out.permute(0, 2, 1), states)
 
             # add to the epochs loss
             epoch_loss += float(loss)

@@ -10,7 +10,10 @@ def weighted_mse_loss(predictions, targets):
     :return: Tensor a single number tensor of the total loss.
     """
     device = predictions.device
-    weights = torch.arange(start=0 + 1/len(predictions), end=1. + 1e-9, step=1/len(predictions), device=device)
+    weights = torch.arange(start=0 + 1/len(predictions),
+                           end=1. + 1e-9,
+                           step=1/len(predictions),
+                           device=device)
     predictions = predictions.permute(0, 1, 3, 2)
     loss = 0.
     for weight, pred in zip(weights, predictions):
