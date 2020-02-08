@@ -4,19 +4,20 @@ from torch import tensor
 from .graphical_model import KalmanGraphicalModel, KalmanInputGraphicalModel
 from .graphical_nn_model import KalmanGNN
 
-########################################################################################################################
+####################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
 # https://github.com/vgsatorras/hybrid-inference
 #
 # Almost everything is different but it was invaluable for understanding how to implement the paper:
-# Combining Generative and Discriminative Models for Hybrid Inference by Sartorras, Akata and Welling. 20 Jun 2019
+# Combining Generative and Discriminative Models for Hybrid Inference
+# by Sartorras, Akata and Welling. 20 Jun 2019
 #
-########################################################################################################################
+####################################################################################################
 
 
 class HybridInference(nn.Module):
 
-    def __init__(self,gamma: float, F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None):
+    def __init__(self, gamma: float, F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None):
         super(HybridInference, self).__init__()
         if G is not None:
             self.graph = KalmanInputGraphicalModel(F=F, H=H, Q=Q, R=R, G=G)
