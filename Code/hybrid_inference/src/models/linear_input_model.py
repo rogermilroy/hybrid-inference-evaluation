@@ -38,25 +38,27 @@ class ConstantVelocityWInputModel:
 
         # input gain matrix. input is a 2 vector of [ax, ay]
         self.G = tensor([[(T ** 2) / 2, T, 0., 0.],
-                         [0., 0., (T ** 2) / 2, T]])
+                         [0., 0., (T ** 2) / 2, T]]).t()
 
         # measurement noise.
         measurement_covariance = lambdasq * eye(2)
         measurement_mean = torch.zeros(measurement_covariance.size()[0])
         self.R = MultivariateNormal(measurement_mean, measurement_covariance)
+        self.t = 0.
         if input_fn is None:
             self.input_function = self.input_fn
 
-    def input_fn(self):
+    def input_fn(self, t):
         """
         Generates inputs (either randomly or from some function).
         Will be acceleration amounts. Cosine and sine for x and y. should draw a circle ish.
         :return:
         """
-        pass
+        return torch.cat([torch.sin(torch.tensor([t/30])), torch.cos(torch.tensor([t/30]))])
 
     def __call__(self, *args, **kwargs):
-        self.x = (self.A @ self.x.t()) + self.Q.sample()
+        self.x = (self.A @ self.x.t()) + (self.G @ self.input_fn(self.t)) + self.Q.sample()
         self.measurement = (self.H @ self.x.t()) + self.R.sample()
+        self.t += 1.
         return self.x, self.measurement
 
