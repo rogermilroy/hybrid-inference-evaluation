@@ -4,7 +4,43 @@ import torch
 from torch.optim import Adam
 from time import time
 from tqdm import tqdm
-from .evaluate_model import evaluate_model
+from .evaluate_model import evaluate_model, evaluate_model_input
+
+
+def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted):
+    """
+    Method to train for one epoch.
+    """
+    model.train()
+    epoch_loss = 0.
+    losses = list()
+    for obs, states, inputs in loader:
+        obs, states, inputs = obs.to(device), states.to(device), inputs.to(device)
+
+        # zero the optimizers gradients from the previous iteration.
+        optimizer.zero_grad()
+
+        # compute the prediction.
+        # print(obs.shape)
+        out, out_list = model(obs, inputs)
+
+        # compute the loss
+        if weighted:
+            loss = criterion(out_list, states)
+        else:
+            loss = criterion(out.permute(0, 2, 1), states)
+
+        # propagate the loss back through the network.
+        loss.backward()
+
+        # update the weights.
+        optimizer.step()
+
+        # add to the epochs loss
+        losses.append(float(loss))
+        epoch_loss += float(loss)
+
+    return epoch_loss, losses
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
@@ -43,7 +79,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
     return epoch_loss, losses
 
 
-def train_hybrid_inference(epochs, val, loss, weighted, save_path, input, log_path="./training.txt",
+def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
+                           log_path="./training.txt",
                            vis_examples=0,
                            data_params={}, load_model=None, computing_device=torch.device("cpu")):
 
@@ -58,7 +95,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, input, log_pa
                       [0., 0., 0.05 ** 2, 0.],
                       [0., 0., 0., 0.05 ** 2]], device=computing_device)
     R = (0.05 ** 2) * torch.eye(2, device=computing_device)
-    if input is not None:
+    if inputs:
         G = torch.tensor([[1 / 2, 1, 0., 0.],
                          [0., 0., 1 / 2, 1]], device=computing_device).t()
         model = HybridInference(F=F,
@@ -103,24 +140,37 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, input, log_pa
                                                                 extras=extras)
     else:
         # else use the defaults.
-        train_loader, val_loader, test_loader = get_dataloaders()
+        train_loader, val_loader, test_loader = get_dataloaders(input=input)
 
     with open(log_path, 'w+') as log_file:
         start = time()
         for i in range(epochs):
             # train a simple epoch and record and print the losses.
-            epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
-                                                       optimizer=optimizer, criterion=criterion,
-                                                       device=computing_device, weighted=weighted)
+            if inputs:
+                epoch_loss, epoch_losses = train_one_epoch_input(model=model, loader=train_loader,
+                                                           optimizer=optimizer, criterion=criterion,
+                                                           device=computing_device, weighted=weighted)
+            else:
+                epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
+                                                                 optimizer=optimizer,
+                                                                 criterion=criterion,
+                                                                 device=computing_device,
+                                                                 weighted=weighted)
             print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
             log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / len(
                 train_loader)))
 
             if val:
                 # if we are validating then do that and print the results
-                val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
+                if inputs:
+                    val_loss, val_av_loss = evaluate_model_input(model=model, loader=val_loader,
                                                        criterion=criterion,
                                                        weighted=weighted, device=computing_device)
+                else:
+                    val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
+                                                           criterion=criterion,
+                                                           weighted=weighted,
+                                                           device=computing_device)
                 print("Epoch {} validation loss: {}".format(i + 1, val_loss))
                 print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
                 log_file.write("Epoch {} validation loss: {}\n".format(i + 1, val_loss))
@@ -129,9 +179,20 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, input, log_pa
             torch.save(model.state_dict(), save_path)
 
         # test it.
-        test_loss, test_av_loss = evaluate_model(model=model, loader=test_loader, criterion=criterion,
-                                                 weighted=weighted, device=computing_device,
-                                                          vis_example=vis_examples)
+        if inputs:
+            test_loss, test_av_loss = evaluate_model_input(model=model,
+                                                           loader=test_loader,
+                                                           criterion=criterion,
+                                                           weighted=weighted,
+                                                           device=computing_device,
+                                                           vis_example=vis_examples)
+        else:
+            test_loss, test_av_loss = evaluate_model(model=model,
+                                                     loader=test_loader,
+                                                     criterion=criterion,
+                                                     weighted=weighted,
+                                                     device=computing_device,
+                                                     vis_example=vis_examples)
         print("Time taken: {}".format(time() - start))
         print("Total test loss: {}".format(test_loss))
         print("Test average loss: {}".format(test_av_loss))

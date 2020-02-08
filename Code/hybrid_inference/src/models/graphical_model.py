@@ -190,7 +190,7 @@ class KalmanInputGraphicalModel(nn.Module):
         :param us_fut: ut+1
         :return:
         """
-        res = x_fut - (self.F.matmul(x_curr) + self.G.matmul(us))
+        res = x_fut - (self.F.matmul(x_curr) + self.G.matmul(us_fut))
         return res
 
     def diff_y_curr(self, ys: tensor, x_curr: tensor) -> tensor:
@@ -241,6 +241,7 @@ class KalmanInputGraphicalModel(nn.Module):
         """
 
         # TODO check each dim is what it should be. For now just do it right.
+        # start as batch x feat x samples ( this is set in HI would be nice to change.)
         # change to samples x batch x feat for manipulation.
         xs = xs.permute(2, 0, 1)
 
@@ -249,8 +250,8 @@ class KalmanInputGraphicalModel(nn.Module):
         x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).permute(1, 2, 0)
         xs = xs.permute(1, 2, 0)
 
-        # TODO verify/think about the shape of us. Will they be the same as xs?
-        us = us.permute(2, 0, 1)
+        # batch x samples x feat
+        us = us.permute(1, 0, 2)
 
         # create the time shifted xs. ensure that all are oriented batch x feat x samples now.
         us_fut = torch.cat([us[1:], us[-1].unsqueeze(0)]).permute(1, 2, 0)

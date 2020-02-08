@@ -32,57 +32,9 @@ class TestTraining(TestCase):
         self.data_params["test_samples"] = 500
         self.data_params["sample_length"] = 10
         self.data_params["starting_point"] = 1
-        self.data_params["batch_size"] = 4
+        self.data_params["batch_size"] = 5
         self.data_params["extras"] = extras
 
-    def test_training_size_len(self):
-        """
-        This will train 3 models of varying training sample amounts. starts at 1000 ends at 100000
-        Each will output a file of results.
-        :return:
-        """
-        for i in range(3):
-            path = "./train_len" + str(self.data_params["train_samples"]) + \
-                   "_mse_start0_seq10"
-            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
-                                   log_path=path + ".txt",
-                                   save_path=path + ".pt",
-                                   data_params=self.data_params,
-                                   computing_device=self.computing_device,
-                                   input=False)
-            self.data_params["train_samples"] *= 10
-
-    def test_sample_seq_len(self):
-        """
-        This will train 3 models of varying sequence lengths. starts at 10 ends at 1000
-        Each will output a file of results.
-        :return:
-        """
-        for i in range(3):
-            path = "./train_len1000_mse_start0_seq" + str(self.data_params["sample_length"])
-            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
-                                   log_path=path + ".txt",
-                                   save_path=path + ".pt",
-                                   data_params=self.data_params,
-                                   computing_device=self.computing_device,
-                                   input=False)
-            self.data_params["sample_length"] *= 10
-
-    def test_sample_start(self):
-        """
-        This will train 3 models of varying sequence start points. starts at 1 ends at 1000
-        Each will output a file of results.
-        :return:
-        """
-        for i in range(4):
-            path = "./train_len1000_mse_start"+str(self.data_params["starting_point"])+"_seq10"
-            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
-                                   log_path=path + ".txt",
-                                   save_path=path + ".pt",
-                                   data_params=self.data_params,
-                                   computing_device=self.computing_device,
-                                   input=False)
-            self.data_params["train_samples"] *= 10
 
     def test_training_size_len_weighted(self):
         """
@@ -98,7 +50,7 @@ class TestTraining(TestCase):
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device,
-                                   input=False)
+                                   inputs=False)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len_weighted(self):
@@ -115,7 +67,7 @@ class TestTraining(TestCase):
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device,
-                                   input=False)
+                                   inputs=False)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start_weighted(self):
@@ -133,7 +85,56 @@ class TestTraining(TestCase):
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
                                    computing_device=self.computing_device,
-                                   input=False)
+                                   inputs=False)
+            self.data_params["train_samples"] *= 10
+
+    def test_training_size_len(self):
+        """
+        This will train 3 models of varying training sample amounts. starts at 1000 ends at 100000
+        Each will output a file of results.
+        :return:
+        """
+        for i in range(3):
+            path = "./train_len" + str(self.data_params["train_samples"]) + \
+                   "_mse_start0_seq10"
+            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
+                                   log_path=path + ".txt",
+                                   save_path=path + ".pt",
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device,
+                                   inputs=False)
+            self.data_params["train_samples"] *= 10
+
+    def test_sample_seq_len(self):
+        """
+        This will train 3 models of varying sequence lengths. starts at 10 ends at 1000
+        Each will output a file of results.
+        :return:
+        """
+        for i in range(3):
+            path = "./train_len1000_mse_start0_seq" + str(self.data_params["sample_length"])
+            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
+                                   log_path=path + ".txt",
+                                   save_path=path + ".pt",
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device,
+                                   inputs=False)
+            self.data_params["sample_length"] *= 10
+
+    def test_sample_start(self):
+        """
+        This will train 3 models of varying sequence start points. starts at 1 ends at 1000
+        Each will output a file of results.
+        :return:
+        """
+        for i in range(4):
+            path = "./train_len1000_mse_start"+str(self.data_params["starting_point"])+"_seq10"
+            train_hybrid_inference(epochs=50, val=True, loss=mse_loss, weighted=False,
+                                   log_path=path + ".txt",
+                                   save_path=path + ".pt",
+                                   data_params=self.data_params,
+                                   computing_device=self.computing_device,
+                                   inputs=False)
             self.data_params["train_samples"] *= 10
 
     # def test_trained_model(self):

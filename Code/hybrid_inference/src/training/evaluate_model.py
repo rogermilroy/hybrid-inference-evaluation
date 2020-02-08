@@ -5,6 +5,35 @@ from src.data.synthetic_position_dataloader import get_dataloaders
 from torch.nn.functional import mse_loss
 
 
+def evaluate_model_input(model, loader, criterion, weighted, device, vis_example=0):
+    model.eval()
+    epoch_loss = 0.
+    sample = None
+    if vis_example > 0:
+        sample = len(loader) / vis_example
+    with torch.no_grad():
+        for num, (obs, states, inputs) in enumerate(loader):
+            obs, states, inputs = obs.to(device), states.to(device), inputs.to(device)
+
+            # compute the prediction.
+            out, out_list = model(obs, inputs)
+
+            if sample and num % sample == 0:
+                print("Predictions: ", out)
+                print("Ground truth: ", states)
+                print("Difference: ", states - out)
+
+            if weighted:
+                loss = criterion(out_list, states)
+            else:
+                loss = criterion(out.permute(0, 2, 1), states)
+
+            # add to the epochs loss
+            epoch_loss += float(loss)
+
+    return epoch_loss, (epoch_loss / len(loader)) / loader.batch_size
+
+
 def evaluate_model(model, loader, criterion, weighted, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
