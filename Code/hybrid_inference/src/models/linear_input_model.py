@@ -54,7 +54,7 @@ class ConstantVelocityWInputModel:
         Will be acceleration amounts. Cosine and sine for x and y. should draw a circle ish.
         :return:
         """
-        return torch.cat([torch.sin(torch.tensor([t/30])), torch.cos(torch.tensor([t/30]))])
+        return torch.cat([torch.sin(torch.tensor([t/10])), torch.cos(torch.tensor([t/10]))])
 
     def __call__(self, *args, **kwargs):
         self.x = (self.A @ self.x.t()) + (self.G @ self.input_fn(self.t)) + self.Q.sample()
