@@ -7,13 +7,13 @@ from torch.utils.data.sampler import RandomSampler
 
 def get_dataloaders(train_samples: int = 1000, val_samples: int = 200, test_samples: int = 500,
                     sample_length: int = 10, starting_point: int = 0, batch_size:int = 1,
-                    input=False, extras={}):
+                    inputs=False, extras={}):
     torch.manual_seed(42)
     x0 = torch.randn(4)
     train_seed = 42
     val_seed = 3
     test_seed = 11
-    if input:
+    if inputs:
         train_dataset = SyntheticInputDataset(x0=x0, n_samples=train_samples,
                                               sample_length=sample_length,
                                               starting_point=starting_point, seed=train_seed)
