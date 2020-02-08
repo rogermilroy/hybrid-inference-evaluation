@@ -48,7 +48,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len(self):
@@ -63,7 +64,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start(self):
@@ -78,7 +80,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["train_samples"] *= 10
 
     def test_training_size_len_weighted(self):
@@ -94,7 +97,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["train_samples"] *= 10
 
     def test_sample_seq_len_weighted(self):
@@ -110,7 +114,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["sample_length"] *= 10
 
     def test_sample_start_weighted(self):
@@ -127,7 +132,8 @@ class TestTraining(TestCase):
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
                                    data_params=self.data_params,
-                                   computing_device=self.computing_device)
+                                   computing_device=self.computing_device,
+                                   input=False)
             self.data_params["train_samples"] *= 10
 
     # def test_trained_model(self):

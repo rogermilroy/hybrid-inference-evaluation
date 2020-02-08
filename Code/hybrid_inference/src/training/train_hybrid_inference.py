@@ -43,7 +43,7 @@ def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
     return epoch_loss, losses
 
 
-def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./training.txt",
+def train_hybrid_inference(epochs, val, loss, weighted, save_path, input, log_path="./training.txt",
                            vis_examples=0,
                            data_params={}, load_model=None, computing_device=torch.device("cpu")):
 
@@ -58,11 +58,21 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
                       [0., 0., 0.05 ** 2, 0.],
                       [0., 0., 0., 0.05 ** 2]], device=computing_device)
     R = (0.05 ** 2) * torch.eye(2, device=computing_device)
-    model = HybridInference(F=F,
-                            H=H,
-                            Q=Q,
-                            R=R,
-                            gamma=1e-4)
+    if input is not None:
+        G = torch.tensor([[1 / 2, 1, 0., 0.],
+                         [0., 0., 1 / 2, 1]], device=computing_device).t()
+        model = HybridInference(F=F,
+                                H=H,
+                                Q=Q,
+                                R=R,
+                                G=G,
+                                gamma=1e-4)
+    else:
+        model = HybridInference(F=F,
+                                H=H,
+                                Q=Q,
+                                R=R,
+                                gamma=1e-4)
 
     if load_model is not None:
         model.load_state_dict(torch.load(load_model))
@@ -89,6 +99,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, log_path="./t
                                                                 sample_length=sample_length,
                                                                 starting_point=starting_point,
                                                                 batch_size=batch_size,
+                                                                input=input,
                                                                 extras=extras)
     else:
         # else use the defaults.

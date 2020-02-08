@@ -57,8 +57,9 @@ class ConstantVelocityWInputModel:
         return torch.cat([torch.sin(torch.tensor([t/10])), torch.cos(torch.tensor([t/10]))])
 
     def __call__(self, *args, **kwargs):
-        self.x = (self.A @ self.x.t()) + (self.G @ self.input_fn(self.t)) + self.Q.sample()
+        u = self.input_fn(self.t)
+        self.x = (self.A @ self.x.t()) + (self.G @ u) + self.Q.sample()
         self.measurement = (self.H @ self.x.t()) + self.R.sample()
         self.t += 1.
-        return self.x, self.measurement
+        return self.x, self.measurement, u
 

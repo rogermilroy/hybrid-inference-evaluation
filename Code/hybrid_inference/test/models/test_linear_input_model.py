@@ -17,9 +17,10 @@ class TestLinearInputModel(TestCase):
         pass
 
     def test_one_cycle(self):
-        state, meas = self.model()
+        state, meas, u = self.model()
         print(state)
         print(meas)
+        print(u)
         ref_state = torch.tensor([1.0, 1.0, 2.5, 3.0])
         ref_meas = torch.tensor([1.0, 2.5])
         self.assertTrue(torch.allclose(state, ref_state, atol=1e-2))
@@ -28,7 +29,7 @@ class TestLinearInputModel(TestCase):
     def test_trajectory(self):
         traj = list()
         for i in range(100):
-            state, meas = self.model()
+            state, meas, u = self.model()
             traj.append(meas)
         traj = torch.stack(traj).numpy().T
         plt.plot(traj[0], traj[1])

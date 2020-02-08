@@ -1,4 +1,5 @@
 from .synthetic_position_dataset import SyntheticPositionDataset
+from .synthetic_input_dataset import SyntheticInputDataset
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import RandomSampler
@@ -6,20 +7,36 @@ from torch.utils.data.sampler import RandomSampler
 
 def get_dataloaders(train_samples: int = 1000, val_samples: int = 200, test_samples: int = 500,
                     sample_length: int = 10, starting_point: int = 0, batch_size:int = 1,
-                    extras={}):
+                    input=False, extras={}):
     torch.manual_seed(42)
     x0 = torch.randn(4)
     train_seed = 42
     val_seed = 3
     test_seed = 11
-    train_dataset = SyntheticPositionDataset(x0=x0, n_samples=train_samples, sample_length=sample_length,
-                                             starting_point=starting_point, seed=train_seed)
+    if input:
+        train_dataset = SyntheticInputDataset(x0=x0, n_samples=train_samples,
+                                              sample_length=sample_length,
+                                              starting_point=starting_point, seed=train_seed)
 
-    val_dataset = SyntheticPositionDataset(x0=x0, n_samples=val_samples, sample_length=sample_length,
-                                             starting_point=starting_point, seed=val_seed)
+        val_dataset = SyntheticInputDataset(x0=x0, n_samples=val_samples,
+                                            sample_length=sample_length,
+                                            starting_point=starting_point, seed=val_seed)
 
-    test_dataset = SyntheticPositionDataset(x0=x0, n_samples=test_samples, sample_length=sample_length,
+        test_dataset = SyntheticInputDataset(x0=x0, n_samples=test_samples,
+                                             sample_length=sample_length,
                                              starting_point=starting_point, seed=test_seed)
+    else:
+        train_dataset = SyntheticPositionDataset(x0=x0, n_samples=train_samples,
+                                                 sample_length=sample_length,
+                                                 starting_point=starting_point, seed=train_seed)
+
+        val_dataset = SyntheticPositionDataset(x0=x0, n_samples=val_samples,
+                                               sample_length=sample_length,
+                                               starting_point=starting_point, seed=val_seed)
+
+        test_dataset = SyntheticPositionDataset(x0=x0, n_samples=test_samples,
+                                                sample_length=sample_length,
+                                                starting_point=starting_point, seed=test_seed)
 
     #### This section is taken from code provided by Jenny Hamer, with thanks.
     # it allows easy specification of cuda options.
