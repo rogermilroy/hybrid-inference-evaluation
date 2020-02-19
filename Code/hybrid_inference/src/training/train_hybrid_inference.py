@@ -143,6 +143,9 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
         # else use the defaults.
         train_loader, val_loader, test_loader = get_dataloaders(inputs=inputs)
 
+    batch_size = train_loader.batch_size
+    sample_len = train_loader.dataset.data.shape[1]
+    divisor = batch_size * sample_len * len(train_loader)
     with open(log_path, 'w+') as log_file:
         start = time()
         for i in range(epochs):
@@ -157,9 +160,8 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                                  criterion=criterion,
                                                                  device=computing_device,
                                                                  weighted=weighted)
-            print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/len(train_loader)))
-            log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / len(
-                train_loader)))
+            print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/divisor))
+            log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / divisor))
 
             if val:
                 # if we are validating then do that and print the results
