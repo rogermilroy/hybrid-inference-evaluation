@@ -91,11 +91,11 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                       [0., 0., 0., 1.]], device=computing_device)
     H = torch.tensor([[1., 0., 0., 0.],
                       [0., 0., 1., 0.]], device=computing_device)
-    Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
-                      [0., 0.05 ** 2, 0., 0.],
-                      [0., 0., 0.05 ** 2, 0.],
-                      [0., 0., 0., 0.05 ** 2]], device=computing_device)
-    R = (0.05 ** 2) * torch.eye(2, device=computing_device)
+    Q = torch.tensor([[0.15 ** 2, 0., 0., 0.],
+                      [0., 0.15 ** 2, 0., 0.],
+                      [0., 0., 0.15 ** 2, 0.],
+                      [0., 0., 0., 0.15 ** 2]], device=computing_device)
+    R = (0.25 ** 2) * torch.eye(2, device=computing_device)
     if inputs:
         G = torch.tensor([[1 / 2, 1, 0., 0.],
                          [0., 0., 1 / 2, 1]], device=computing_device).t()
@@ -104,13 +104,13 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                 Q=Q,
                                 R=R,
                                 G=G,
-                                gamma=1e-4)
+                                gamma=1e-3)
     else:
         model = HybridInference(F=F,
                                 H=H,
                                 Q=Q,
                                 R=R,
-                                gamma=1e-4)
+                                gamma=1e-3)
 
     if load_model is not None:
         model.load_state_dict(torch.load(load_model))
