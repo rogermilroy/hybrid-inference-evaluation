@@ -37,7 +37,7 @@ def evaluate_model_input(model, loader, criterion, device, vis_example=0):
             # add to the epochs loss
             epoch_loss += float(loss)
 
-    divisor = len(loader) * batch_size * sample_len
+    divisor = len(loader.dataset)
     return epoch_loss, (epoch_loss / divisor)
 
 
@@ -72,7 +72,7 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
             # add to the epochs loss
             epoch_loss += float(loss)
 
-    divisor = len(loader) * batch_size * sample_len
+    divisor = len(loader.dataset)
     return epoch_loss, (epoch_loss / divisor)
 
 

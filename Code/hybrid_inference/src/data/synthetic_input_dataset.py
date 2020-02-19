@@ -38,7 +38,7 @@ class SyntheticInputDataset(data.Dataset):
         Returns the length of the dataset
         :return: int: The length of the dataset.
         """
-        return self.data.size()[0]
+        return self.data.shape[0] * self.data.shape[1]
 
     def __getitem__(self, index):
         """

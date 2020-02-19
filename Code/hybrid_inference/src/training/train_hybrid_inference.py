@@ -145,9 +145,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
         # else use the defaults.
         train_loader, val_loader, test_loader = get_dataloaders(inputs=inputs)
 
-    batch_size = train_loader.batch_size
-    sample_len = train_loader.dataset.data.shape[1]
-    divisor = batch_size * sample_len * len(train_loader)
+    divisor = len(train_loader.dataset)
 
     best_model = None
     best_val = math.inf

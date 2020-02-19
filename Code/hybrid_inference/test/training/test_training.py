@@ -27,12 +27,12 @@ class TestTraining(TestCase):
                                [0., 0., 1., 0.]]).to(self.computing_device)
         self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42)
         self.data_params = dict()
-        self.data_params["train_samples"] = 100
+        self.data_params["train_samples"] = 10
         self.data_params["val_samples"] = 20
         self.data_params["test_samples"] = 50
         self.data_params["sample_length"] = 100
         self.data_params["starting_point"] = 1000
-        self.data_params["batch_size"] = 1
+        self.data_params["batch_size"] = 3
         self.data_params["extras"] = extras
 
 
