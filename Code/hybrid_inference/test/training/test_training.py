@@ -27,9 +27,9 @@ class TestTraining(TestCase):
                                [0., 0., 1., 0.]]).to(self.computing_device)
         self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10, starting_point=0, seed=42)
         self.data_params = dict()
-        self.data_params["train_samples"] = 1
-        self.data_params["val_samples"] = 20
-        self.data_params["test_samples"] = 50
+        self.data_params["train_samples"] = 10
+        self.data_params["val_samples"] = 2
+        self.data_params["test_samples"] = 5
         self.data_params["sample_length"] = 100
         self.data_params["starting_point"] = 1000
         self.data_params["batch_size"] = 1
@@ -42,9 +42,9 @@ class TestTraining(TestCase):
         Each will output a file of results.
         :return:
         """
-        for i in range(3):
-            path = "./weighted_train_len" + str(self.data_params["train_samples"]) + \
-                   "_mse_start0_seq10"
+        for i in range(1):
+            path = "./fixed_len" + str(self.data_params["train_samples"]) + \
+                   "start1000_seq100"
             train_hybrid_inference(epochs=10, val=True, loss=weighted_mse_loss, weighted=True,
                                    log_path=path + ".txt",
                                    save_path=path + ".pt",
