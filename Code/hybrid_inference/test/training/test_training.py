@@ -53,10 +53,6 @@ class TestTraining(TestCase):
                                    inputs=False)
             self.data_params["train_samples"] *= 10
 
-                                   computing_device=self.computing_device,
-                                   inputs=False)
-            self.data_params["train_samples"] *= 10
-
     # def test_sample_seq_len_weighted(self):
     #     """
     #     This will train 3 models of varying sequence lengths. starts at 10 ends at 1000
@@ -105,6 +101,10 @@ class TestTraining(TestCase):
     #                                log_path=path + ".txt",
     #                                save_path=path + ".pt",
     #                                data_params=self.data_params,
+    #                                computing_device=self.computing_device,
+    #                                inputs=False)
+    #         self.data_params["train_samples"] *= 10
+    #
     # def test_sample_seq_len(self):
     #     """
     #     This will train 3 models of varying sequence lengths. starts at 10 ends at 1000
