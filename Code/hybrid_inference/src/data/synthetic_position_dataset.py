@@ -57,7 +57,7 @@ class SyntheticPositionDataset(data.Dataset):
         torch.manual_seed(seed)
         model = ConstantVelocityModel(x0=x0)
 
-        total_sample_size = n_samples*sample_length + starting_point*sample_length
+        total_sample_size = n_samples*sample_length + starting_point
 
         ground_truth = torch.zeros((total_sample_size, x0.size()[0]))  # TODO check x0 dimensions.
         measurements = torch.zeros((total_sample_size, 2))  # TODO auto fill size of the measurements
@@ -67,4 +67,4 @@ class SyntheticPositionDataset(data.Dataset):
             ground_truth[i, :] = x
             measurements[i, :] = z
 
-        return ground_truth[starting_point*sample_length:], measurements[starting_point*sample_length:]
+        return ground_truth[starting_point:], measurements[starting_point:]
