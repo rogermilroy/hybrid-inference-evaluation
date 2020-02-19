@@ -17,7 +17,8 @@ from .graphical_nn_model import KalmanGNN
 
 class HybridInference(nn.Module):
 
-    def __init__(self, gamma: float, F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None):
+    def __init__(self,  F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None,
+                 gamma: float = 1e-4):
         super(HybridInference, self).__init__()
         if G is not None:
             self.graph = KalmanInputGraphicalModel(F=F, H=H, Q=Q, R=R, G=G)
@@ -44,10 +45,7 @@ class HybridInference(nn.Module):
         :param iterations:
         :return:
         """
-        if len(ys.shape) == 3:
-            xs = self.H.t().matmul(torch.transpose(ys, 1, 2))
-        else:
-            xs = self.H.t().matmul(ys.t())
+        xs = self.H.t().matmul(torch.transpose(ys, 1, 2))
 
         hx = self.gnn.initialise_hx_y(ys)
 

@@ -1,5 +1,6 @@
 from torch import nn
 import torch
+import torch.nn.functional as F
 from .encoding_model import GraphEncoderMLP
 from .decoding_model import GraphDecoder
 from .batch_gru import BatchGRUCell
@@ -56,15 +57,20 @@ class KalmanGNN(nn.Module):
             hx = hx.permute(2, 0, 1)
 
             # create the time shifted xs. ensure that all are oriented batch x samples x feat now.
-            hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).permute(1, 2, 0)
-            hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).permute(1, 2, 0)
+            # mm1 has element -1 dropped so 0 - 98 for seq len 100
+            # m0 has element 0 dropped so 1- 99 for seq len 100
+            hx_mm1 = hx[:-1].permute(1, 2, 0)
+            hx_m0 = hx[1:].permute(1, 2, 0)
             hx = hx.permute(1, 2, 0)
 
             past_curr_edge = self.past_curr_nn(
-                                    torch.cat([hx_past, hx, past_curr_mess], dim=1).permute(0, 2, 1))
+                                    torch.cat([hx_m0, hx_mm1, past_curr_mess[:,:,1:]], dim=1).permute(0, 2, 1))
+            past_curr_edge = F.pad(past_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate', value=0).permute(0, 2, 1)
 
             fut_curr_edge = self.future_curr_nn(
-                                    torch.cat([hx_future, hx, fut_curr_mess], dim=1).permute(0, 2, 1))
+                                    torch.cat([hx_mm1, hx_m0, fut_curr_mess[:,:,:-1]], dim=1).permute(0, 2, 1))
+            fut_curr_edge = F.pad(fut_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate',
+                                  value=0).permute(0, 2, 1)
 
             y_curr_edge = self.y_curr_nn(
                                 torch.cat([self.hy, hx, y_curr_mess], dim=1).permute(0, 2, 1))
@@ -81,29 +87,7 @@ class KalmanGNN(nn.Module):
 
             eps = self.decoder(h)
         else:
-            # check dims and transpose if necessary
-            if hx.shape[0] == self.h_dim:
-                hx = hx.t()
-
-            # construct the edges to pass through the relevant models
-            hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t()
-            hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t()
-            hx = hx.t()
-
-            # pass compute edge encodings.
-            past_curr_edge = self.past_curr_nn(torch.cat([hx_past, hx, past_curr_mess]).t()).t()
-            fut_curr_edge = self.future_curr_nn(torch.cat([hx_future, hx, fut_curr_mess]).t()).t()
-            y_curr_edge = self.y_curr_nn(torch.cat([self.hy, hx, y_curr_mess]).t()).t()
-
-            # sum edge encodings?
-            # pass through node encoder
-            U = self.node_nn(sum([past_curr_edge, fut_curr_edge, y_curr_edge]).t()).t()
-
-            # pass through gru
-            # unsqueeze to use BatchGRU. Requires 3D inputs.
-            h = self.gru(U.t().unsqueeze(0), hx.t().unsqueeze(0)).t().unsqueeze(0)
-
-            eps = self.decoder(h).squeeze(0)
+            raise Exception("Input should have batch dimension, unsqueeze if necessary.")
 
         # return the decoded hx and hx.
         return eps, h
