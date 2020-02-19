@@ -7,12 +7,10 @@ from torch.utils.data.sampler import RandomSampler
 
 def get_dataloaders(train_samples: int = 1000, val_samples: int = 200, test_samples: int = 500,
                     sample_length: int = 10, starting_point: int = 0, batch_size:int = 1,
-                    inputs=False, extras={}):
-    torch.manual_seed(42)
-    x0 = torch.randn(4)
-    train_seed = 42
-    val_seed = 3
-    test_seed = 11
+                    inputs=False, x0 = torch.tensor([0.0, 0.1, 0.0, 0.1]), extras={}):
+    train_seed = 61
+    val_seed = 51
+    test_seed = 0
     if inputs:
         train_dataset = SyntheticInputDataset(x0=x0, n_samples=train_samples,
                                               sample_length=sample_length,

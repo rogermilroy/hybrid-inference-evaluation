@@ -80,9 +80,8 @@ class KalmanGraphicalModel(nn.Module):
         :param iterations: The number of iterations the iterative process should do.
         :return:
         """
-        if xs.shape[0] != self.F.shape[0]:
-            # switch to samples x dim of sample for concatenation.
-            xs = xs.t()
+        # xs should be batch x feat x samples
+        # ys should be batch x feat x samples.
         x = xs
         # iterate up to the number of iterations
         for i in range(iterations):
@@ -115,7 +114,8 @@ class KalmanGraphicalModel(nn.Module):
         xs = xs.permute(1, 2, 0)
 
         # make sure that the ys are oriented batch x feat x samples
-        ys = ys.permute(0, 2, 1)
+        if ys.shape[2] != xs.shape[2]:
+            ys = ys.permute(0, 2, 1)
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
@@ -214,9 +214,6 @@ class KalmanInputGraphicalModel(nn.Module):
         :param iterations: The number of iterations the iterative process should do.
         :return:
         """
-        if xs.shape[0] != self.F.shape[0]:
-            # switch to samples x dim of sample for concatenation.
-            xs = xs.t()
         x = xs
         # iterate up to the number of iterations
         for i in range(iterations):
@@ -250,15 +247,16 @@ class KalmanInputGraphicalModel(nn.Module):
         x_future = torch.cat([xs[1:], xs[-1].unsqueeze(0)]).permute(1, 2, 0)
         xs = xs.permute(1, 2, 0)
 
-        # batch x samples x feat
-        us = us.permute(1, 0, 2)
+        #  samples x batch x feat
+        us = us.permute(2, 0, 1)
 
         # create the time shifted xs. ensure that all are oriented batch x feat x samples now.
         us_fut = torch.cat([us[1:], us[-1].unsqueeze(0)]).permute(1, 2, 0)
         us = us.permute(1, 2, 0)
 
         # make sure that the ys are oriented batch x feat x samples
-        ys = ys.permute(0, 2, 1)
+        if ys.shape[2] != xs.shape[2]:
+            ys = ys.permute(0, 2, 1)
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs, us))
