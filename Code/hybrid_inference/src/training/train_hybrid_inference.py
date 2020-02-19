@@ -172,9 +172,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                     val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
                                                            criterion=mse_loss,
                                                            device=computing_device)
-                print("Epoch {} validation loss: {}".format(i + 1, val_loss))
                 print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
-                log_file.write("Epoch {} validation loss: {}\n".format(i + 1, val_loss))
                 log_file.write("Epoch {} avg validation loss: {}\n".format(i + 1, val_av_loss))
             # save the model at this point.
             torch.save(model.state_dict(), save_path)
@@ -193,8 +191,6 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                      device=computing_device,
                                                      vis_example=vis_examples)
         print("Time taken: {}".format(time() - start))
-        print("Total test loss: {}".format(test_loss))
         print("Test average loss: {}".format(test_av_loss))
         log_file.write("Time taken: {}\n".format(time() - start))
-        log_file.write("Total test loss: {}\n".format(test_loss))
         log_file.write("Test average loss: {}\n".format(test_av_loss))
