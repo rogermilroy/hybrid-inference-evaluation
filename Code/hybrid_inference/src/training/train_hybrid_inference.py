@@ -86,7 +86,6 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                            vis_examples=0,
                            data_params={}, load_model=None, computing_device=torch.device("cpu"),
                            early_stopping=True):
-
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
                       [0., 0., 1., 1.],
@@ -100,7 +99,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
     R = (0.25 ** 2) * torch.eye(2, device=computing_device)
     if inputs:
         G = torch.tensor([[1 / 2, 1, 0., 0.],
-                         [0., 0., 1 / 2, 1]], device=computing_device).t()
+                          [0., 0., 1 / 2, 1]], device=computing_device).t()
         model = HybridInference(F=F,
                                 H=H,
                                 Q=Q,
@@ -147,30 +146,43 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
 
     divisor = train_loader.dataset.total_samples()
 
+    if inputs:
+        _, pre_val = evaluate_model_input(model, test_loader, criterion=mse_loss,
+                                       device=computing_device)
+    else:
+        _, pre_val = evaluate_model(model, test_loader, criterion=mse_loss, device=computing_device)
+
     best_model = None
     best_val = math.inf
     with open(log_path, 'w+') as log_file:
+
+        print("Before training avg test loss: {}".format(pre_val / divisor))
+        log_file.write("Before training avg test loss: {}".format(pre_val / divisor))
+
         start = time()
         for i in range(epochs):
             # train a simple epoch and record and print the losses.
             if inputs:
                 epoch_loss, epoch_losses = train_one_epoch_input(model=model, loader=train_loader,
-                                                           optimizer=optimizer, criterion=criterion,
-                                                           device=computing_device, weighted=weighted)
-            else:
-                epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
                                                                  optimizer=optimizer,
                                                                  criterion=criterion,
                                                                  device=computing_device,
                                                                  weighted=weighted)
-            print("Epoch {} avg training loss: {}".format(i+1, epoch_loss/divisor))
+            else:
+                epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
+                                                           optimizer=optimizer,
+                                                           criterion=criterion,
+                                                           device=computing_device,
+                                                           weighted=weighted)
+            print("Epoch {} avg training loss: {}".format(i + 1, epoch_loss / divisor))
             log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / divisor))
 
             if val:
                 # if we are validating then do that and print the results
                 if inputs:
                     val_loss, val_av_loss = evaluate_model_input(model=model, loader=val_loader,
-                                                       criterion=mse_loss, device=computing_device)
+                                                                 criterion=mse_loss,
+                                                                 device=computing_device)
                 else:
                     val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
                                                            criterion=mse_loss,

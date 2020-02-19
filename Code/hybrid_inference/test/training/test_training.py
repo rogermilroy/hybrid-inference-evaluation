@@ -32,7 +32,7 @@ class TestTraining(TestCase):
         self.data_params["test_samples"] = 50
         self.data_params["sample_length"] = 100
         self.data_params["starting_point"] = 1000
-        self.data_params["batch_size"] = 3
+        self.data_params["batch_size"] = 4
         self.data_params["extras"] = extras
 
 

@@ -30,7 +30,7 @@ def evaluate_model_input(model, loader, criterion, device, vis_example=0):
                 print("Ground truth: ", states)
                 print("Difference: ", states - out)
 
-            loss = criterion(out.permute(0, 2, 1), states)
+            loss = criterion(out.permute(1, 2, 0), states.permute(2, 1, 0), reduction='sum')
 
             # add to the epochs loss
             epoch_loss += float(loss)
@@ -63,7 +63,8 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
                 print("Ground truth: ", states)
                 print("Difference: ", states - out)
 
-            loss = criterion(out.permute(0, 2, 1), states)
+            # need to override mse averaging.
+            loss = criterion(out.permute(1, 2, 0), states.permute(2, 1, 0), reduction='sum')
 
             # add to the epochs loss
             epoch_loss += float(loss)
