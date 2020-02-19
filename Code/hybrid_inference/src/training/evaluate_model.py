@@ -10,8 +10,6 @@ def evaluate_model_input(model, loader, criterion, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
     sample = None
-    batch_size = loader.batch_size
-    sample_len = loader.dataset.data.shape[1]  # TODO make less specific
     H = torch.tensor([[1., 0., 0., 0.],
                       [0., 0., 1., 0.]]).t()
     if vis_example > 0:
@@ -45,8 +43,6 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
     model.eval()
     epoch_loss = 0.
     sample = None
-    batch_size = loader.batch_size
-    sample_len = loader.dataset.data.shape[1]  # TODO make less specific
     H = torch.tensor([[1., 0., 0., 0.],
                       [0., 0., 1., 0.]]).t()
     if vis_example > 0:
@@ -72,7 +68,7 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
             # add to the epochs loss
             epoch_loss += float(loss)
 
-    divisor = len(loader.dataset)
+    divisor = loader.dataset.total_samples()
     return epoch_loss, (epoch_loss / divisor)
 
 
