@@ -1,6 +1,7 @@
 from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataloader import get_dataloaders
 import torch
+import math
 from torch.optim import Adam
 from torch.nn.functional import mse_loss
 from time import time
@@ -83,7 +84,8 @@ def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
 def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                            log_path="./training.txt",
                            vis_examples=0,
-                           data_params={}, load_model=None, computing_device=torch.device("cpu")):
+                           data_params={}, load_model=None, computing_device=torch.device("cpu"),
+                           early_stopping=True):
 
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
@@ -146,6 +148,9 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
     batch_size = train_loader.batch_size
     sample_len = train_loader.dataset.data.shape[1]
     divisor = batch_size * sample_len * len(train_loader)
+
+    best_model = None
+    best_val = math.inf
     with open(log_path, 'w+') as log_file:
         start = time()
         for i in range(epochs):
@@ -174,8 +179,17 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                            device=computing_device)
                 print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
                 log_file.write("Epoch {} avg validation loss: {}\n".format(i + 1, val_av_loss))
+
+                # store the best model based on validation scores.
+                if early_stopping and val_loss < best_val:
+                    best_val = val_loss
+                    best_model = model.state_dict()
+
             # save the model at this point.
             torch.save(model.state_dict(), save_path)
+        # load the best model based on early stopping
+        if early_stopping:
+            model.load_state_dict(best_model)
 
         # test it.
         if inputs:
