@@ -17,5 +17,5 @@ def weighted_mse_loss(predictions, targets):
     predictions = predictions.permute(0, 1, 3, 2)
     loss = 0.
     for weight, pred in zip(weights, predictions):
-        loss += weight * functional.mse_loss(pred, targets)
+        loss += weight * functional.mse_loss(pred, targets, reduction='sum')
     return loss
