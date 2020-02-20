@@ -76,19 +76,19 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
 def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model1: str,
                    path_to_model2: str):
     # need datasets
-    _, _, test_loader = get_dataloaders(train_samples=1000,
-                                        val_samples=1000,
-                                        test_samples=50,
-                                        sample_length=10,
-                                        starting_point=1,
+    _, _, test_loader = get_dataloaders(train_samples=10,
+                                        val_samples=10,
+                                        test_samples=200,
+                                        sample_length=100,
+                                        starting_point=1000,
                                         batch_size=5,
                                         extras=False)
     if model_2_input or model_1_input:
-        _, _, test_loader_input = get_dataloaders(train_samples=1000,
-                                                  val_samples=1000,
-                                                  test_samples=50,
-                                                  sample_length=10,
-                                                  starting_point=1,
+        _, _, test_loader_input = get_dataloaders(train_samples=10,
+                                                  val_samples=10,
+                                                  test_samples=200,
+                                                  sample_length=100,
+                                                  starting_point=1000,
                                                   batch_size=5,
                                                   inputs=True,
                                                   extras=False)
@@ -120,9 +120,11 @@ def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model
                          H=H,
                          Q=Q,
                          R=R)
-    if isinstance(model_1, HybridInference):
-        model_1.gamma = 1e-4
-        model1.load_state_dict(torch.load(path_to_model1, map_location=torch.device("cpu")))
+    if isinstance(model1, HybridInference):
+        model1.gamma = 1e-4
+        if len(path_to_model1) > 0:
+            model1.load_state_dict(torch.load(path_to_model1, map_location=torch.device("cpu")))
+
     if model_2_input:
         model2 = model_2(F=F,
                          H=H,
@@ -135,9 +137,14 @@ def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model
                          Q=Q,
                          R=R)
 
-    if isinstance(model_2, HybridInference):
-        model_1.gamma = 1e-4
-        model2.load_state_dict(torch.load(path_to_model2, map_location=torch.device("cpu")))
+    if isinstance(model2, HybridInference):
+        model2.gamma = 1e-4
+
+        if len(path_to_model2) > 0:
+            print("pretrained")
+            model2.load_state_dict(torch.load(path_to_model2, map_location=torch.device("cpu")))
+        else:
+            print("not pretrained")
 
     # evaluate and print/return results.
     if model_1_input:
@@ -166,8 +173,8 @@ if __name__ == '__main__':
     #                model_2_input=False,
     #                path_to_model1="../../mse_results/train_len10000_mse_start0_seq10.pt",
     #                path_to_model2="../../weighted_mse_results/weighted_train_len1000_mse_start0_seq10.pt")
-    compare_models(model_1=KalmanInputGraphicalModel, model_2=HybridInference, model_1_input=True,
-                   model_2_input=True,
+    compare_models(model_1=KalmanGraphicalModel, model_2=HybridInference, model_1_input=False,
+                   model_2_input=False,
                    path_to_model1="",
                    path_to_model2="../../weighted_mse_results"
                                   "/weighted_input_train_len5000_mse_start0_seq10.pt")
