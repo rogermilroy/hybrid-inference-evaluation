@@ -28,7 +28,7 @@ class HybridInference(nn.Module):
         self.H = H
         self.gamma = gamma
 
-    def forward(self, ys, us=None, iterations=50):
+    def forward(self, ys, us=None, iterations=200):
         """
         Forward pass through the hybrid inferrer.
         This is an iterative procedure that progressively refines the estimate of the xs (states)
