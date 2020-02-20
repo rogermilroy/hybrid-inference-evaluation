@@ -9,14 +9,15 @@ from tqdm import tqdm
 from .evaluate_model import evaluate_model, evaluate_model_input
 
 
-def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted):
+def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted, validate_every,
+                          val_loader, log_file):
     """
     Method to train for one epoch.
     """
     model.train()
     epoch_loss = 0.
     losses = list()
-    for obs, states, inputs in loader:
+    for num, (obs, states, inputs) in enumerate(loader):
         obs, states, inputs = obs.to(device), states.to(device), inputs.to(device)
 
         # zero the optimizers gradients from the previous iteration.
@@ -42,17 +43,28 @@ def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted)
         losses.append(float(loss))
         epoch_loss += float(loss)
 
+        # in epoch validation
+        if num % validate_every == 0:
+            # if we are validating then do that and print the results
+            _, val_av_loss = evaluate_model_input(model=model, loader=val_loader,
+                                                       criterion=mse_loss,
+                                                       device=device)
+            print("Batch {} avg validation loss: {}".format(num + 1, val_av_loss))
+            log_file.write("Batch {} avg validation loss: {}\n".format(num + 1, val_av_loss))
+
+
     return epoch_loss, losses
 
 
-def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
+def train_one_epoch(model, loader, optimizer, criterion, device, weighted, validate_every,
+    val_loader, log_file):
     """
     Method to train for one epoch.
     """
     model.train()
     epoch_loss = 0.
     losses = list()
-    for obs, states in loader:
+    for num, (obs, states)in enumerate(loader):
         obs, states = obs.to(device), states.to(device)
 
         # zero the optimizers gradients from the previous iteration.
@@ -77,6 +89,15 @@ def train_one_epoch(model, loader, optimizer, criterion, device, weighted):
         # add to the epochs loss
         losses.append(float(loss))
         epoch_loss += float(loss)
+
+        # in epoch validation
+        if num % validate_every == 0:
+            # if we are validating then do that and print the results
+            _, val_av_loss = evaluate_model(model=model, loader=val_loader,
+                                                       criterion=mse_loss,
+                                                       device=device)
+            print("Batch {} avg validation loss: {}".format(num + 1, val_av_loss))
+            log_file.write("Batch {} avg validation loss: {}\n".format(num + 1, val_av_loss))
 
     return epoch_loss, losses
 
@@ -154,6 +175,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
 
     best_model = None
     best_val = math.inf
+    validate_every = 10
     with open(log_path, 'w+') as log_file:
 
         print("Before training avg test loss: {}".format(pre_val / divisor))
@@ -167,13 +189,19 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                                  optimizer=optimizer,
                                                                  criterion=criterion,
                                                                  device=computing_device,
-                                                                 weighted=weighted)
+                                                                 weighted=weighted,
+                                                                 validate_every=validate_every,
+                                                                 val_loader=val_loader,
+                                                                 log_file=log_file)
             else:
                 epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
                                                            optimizer=optimizer,
                                                            criterion=criterion,
                                                            device=computing_device,
-                                                           weighted=weighted)
+                                                           weighted=weighted,
+                                                           validate_every=validate_every,
+                                                           val_loader=val_loader,
+                                                           log_file=log_file)
             print("Epoch {} avg training loss: {}".format(i + 1, epoch_loss / divisor))
             log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / divisor))
 
