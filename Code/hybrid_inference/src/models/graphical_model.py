@@ -70,7 +70,7 @@ class KalmanGraphicalModel(nn.Module):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def iterate(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 100):
+    def iterate(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
@@ -125,11 +125,6 @@ class KalmanGraphicalModel(nn.Module):
 
         # return messages
         return [m1, m2, m3]
-
-
-from torch import nn
-from torch import tensor
-import torch
 
 
 ########################################################################################################################
