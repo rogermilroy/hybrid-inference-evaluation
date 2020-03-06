@@ -172,5 +172,8 @@ msg_gen/
 srv_gen/
 .catkin_workspace
 
+## external projects
+hector*/
+
 ## pytorch state dicts
 *.pt
