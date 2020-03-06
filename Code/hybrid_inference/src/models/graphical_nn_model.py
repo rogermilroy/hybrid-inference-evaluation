@@ -1,9 +1,10 @@
-from torch import nn
 import torch
 import torch.nn.functional as F
-from .encoding_model import GraphEncoderMLP
-from .decoding_model import GraphDecoder
-from .batch_gru import BatchGRUCell
+from src.models.batch_gru import BatchGRUCell
+from src.models.decoding_model import GraphDecoder
+from src.models.encoding_model import GraphEncoderMLP
+from torch import nn
+
 
 ########################################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
@@ -64,22 +65,22 @@ class KalmanGNN(nn.Module):
             hx = hx.permute(1, 2, 0)
 
             past_curr_edge = self.past_curr_nn(
-                                    torch.cat([hx_m0, hx_mm1, past_curr_mess[:,:,1:]], dim=1).permute(0, 2, 1))
-            past_curr_edge = F.pad(past_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate', value=0).permute(0, 2, 1)
+                torch.cat([hx_m0, hx_mm1, past_curr_mess[:, :, 1:]], dim=1).permute(0, 2, 1))
+            past_curr_edge = F.pad(past_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate',
+                                   value=0).permute(0, 2, 1)
 
             fut_curr_edge = self.future_curr_nn(
-                                    torch.cat([hx_mm1, hx_m0, fut_curr_mess[:,:,:-1]], dim=1).permute(0, 2, 1))
+                torch.cat([hx_mm1, hx_m0, fut_curr_mess[:, :, :-1]], dim=1).permute(0, 2, 1))
             fut_curr_edge = F.pad(fut_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate',
                                   value=0).permute(0, 2, 1)
 
             y_curr_edge = self.y_curr_nn(
-                                torch.cat([self.hy, hx, y_curr_mess], dim=1).permute(0, 2, 1))
+                torch.cat([self.hy, hx, y_curr_mess], dim=1).permute(0, 2, 1))
             # still batch x samples x features
 
             # sum edge encodings
             # pass through node encoder
-            U = self.node_nn(
-                        sum([past_curr_edge, fut_curr_edge, y_curr_edge]))
+            U = self.node_nn(sum([past_curr_edge, fut_curr_edge, y_curr_edge]))
 
             # pass through gru
             h = self.gru(U, hx.permute(0, 2, 1))
@@ -116,30 +117,18 @@ class KalmanGNN(nn.Module):
             # return ys to normal.
             ys = torch.transpose(ys, 1, 0)
         else:
-            if ys.shape[0] == self.y_dim:
-                # turn from dims x samples to samples x dims
-                ys = ys.t()
-            num_samples = ys.shape[0]
-            y_past = torch.cat([ys[0].unsqueeze(0), ys[:-1]]).t()
-            y_future = torch.cat([ys[1:], ys[-1].unsqueeze(0)]).t()
-            ys = ys.t()
+            raise Exception("Input should have batch dimension, unsqueeze if necessary.")
 
         # take the difference between past and current ys and current and future ys.
         diff1 = ys - y_past
         diff2 = y_future - ys
 
         # concatenate and  unsqueeze
-        if len(ys.shape) == 3:
-            hy_in = torch.cat([diff1, diff2], dim=2).permute(0, 2, 1)
-            # save as self.hy
-            self.hy = self.hy_initialiser(hy_in)#.permute(1, 2, 0) TODO see if reshaping here is
-            # better
-            hx = torch.randn((batch_size, self.h_dim, num_samples), device=device)
-        else:
-            # unsqueeze as conv only takes 3d inputs.
-            hy_in = torch.cat([diff1, diff2]).unsqueeze(0)
-            # save as self.hy
-            self.hy = self.hy_initialiser(hy_in).squeeze(0)
-            hx = torch.randn((self.h_dim, num_samples), device=device)
+
+        hy_in = torch.cat([diff1, diff2], dim=2).permute(0, 2, 1)
+        # save as self.hy
+        self.hy = self.hy_initialiser(hy_in)  # .permute(1, 2, 0) TODO see if reshaping here is
+        # better
+        hx = torch.randn((batch_size, self.h_dim, num_samples), device=device)
 
         return hx

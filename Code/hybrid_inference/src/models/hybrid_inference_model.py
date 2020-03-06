@@ -1,8 +1,10 @@
 import torch
-from torch import nn
+from src.models.graphical_model import KalmanGraphicalModel, KalmanInputGraphicalModel
+from src.models.graphical_nn_model import KalmanGNN
+from src.models.predictor import Predictor
+from src.models.smoother import Smoother
 from torch import tensor
-from .graphical_model import KalmanGraphicalModel, KalmanInputGraphicalModel
-from .graphical_nn_model import KalmanGNN
+
 
 ####################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
@@ -15,9 +17,9 @@ from .graphical_nn_model import KalmanGNN
 ####################################################################################################
 
 
-class HybridInference(nn.Module):
+class HybridInference(Smoother, Predictor):
 
-    def __init__(self,  F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None,
+    def __init__(self, F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor = None,
                  gamma: float = 1e-4):
         super(HybridInference, self).__init__()
         if G is not None:
@@ -28,7 +30,7 @@ class HybridInference(nn.Module):
         self.H = H
         self.gamma = gamma
 
-    def forward(self, ys, us=None, iterations=200):
+    def forward(self, ys: tensor, us: tensor = None, iterations=200):
         """
         Forward pass through the hybrid inferrer.
         This is an iterative procedure that progressively refines the estimate of the xs (states)
@@ -40,6 +42,7 @@ class HybridInference(nn.Module):
         See KalmanGraphicalModel for more info.
         These messages are passed to the gnn along with hx. The new hx and a correction eps are returned.
         The estimates of state xs are then updated with the sum of the graphical model messages and eps weighted by gamma.
+        (batch x feat x seq)
         :param ys:
         :param us:
         :param iterations:
@@ -64,3 +67,25 @@ class HybridInference(nn.Module):
             iter_preds.append(xs)
         # return the final estimate of the positions.
         return xs, torch.stack(iter_preds)
+
+    def predict(self, n: int, ys: tensor, us: tensor = None, iterations: int = 200):
+        """
+        Predicts up to n time steps into the future.
+        inputs expected to be (batch x feat x seq)
+        :param n:
+        :param ys: (
+        :param us:
+        :param iterations:
+        :return:
+        """
+        # us must match size otherwise error
+        if us is not None and us.shape[2] != (ys.shape[2] + n):
+            raise Exception("Inputs (us) must be provided to line up with predicted time.")
+        else:
+            # add n steps to the end of ys. (should be sequence dimension)
+            ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0)
+
+        if us:
+            return self.forward(ys=ys, us=us, iterations=iterations)
+        else:
+            return self.forward(ys=ys, iterations=iterations)

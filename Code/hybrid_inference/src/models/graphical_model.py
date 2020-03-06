@@ -1,6 +1,8 @@
-from torch import nn
-from torch import tensor
 import torch
+from src.models.predictor import Predictor
+from src.models.smoother import Smoother
+from torch import tensor
+
 
 ########################################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
@@ -12,7 +14,7 @@ import torch
 ########################################################################################################################
 
 
-class KalmanGraphicalModel(nn.Module):
+class KalmanGraphicalModel(Smoother, Predictor):
     """
     Class that implements the Kalman Filter as an iterative graph message passing routine.
     Currently just a Smoother.
@@ -28,7 +30,7 @@ class KalmanGraphicalModel(nn.Module):
         :param Q: The motion noise model 2d square tensor
         :param R: The measurement noise model 2d square tensor
         """
-        super(KalmanGraphicalModel, self).__init__()
+        super().__init__()
         self.F = F
         self.H = H
         self.Q = Q
@@ -97,8 +99,8 @@ class KalmanGraphicalModel(nn.Module):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
-        xs should be batch x feat x samples
-        ys should be batch x feat x samples
+        xs should be (batch x feat x samples)
+        ys should be (batch x feat x samples)
         :param xs: estimates of the state
         :param ys: observations.
         :return:
@@ -122,9 +124,24 @@ class KalmanGraphicalModel(nn.Module):
         m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
-
         # return messages
         return [m1, m2, m3]
+
+    def predict(self, n: int, xs: tensor, ys: tensor, gamma: float, iterations: int = 200):
+        """
+        Predicts up to n time steps into the future.
+        inputs expected to be (batch x feat x seq)
+        :param n:
+        :param xs:
+        :param ys:
+        :param gamma:
+        :param iterations:
+        :return:
+        """
+        # add n steps to the end of ys. (should be sequence dimension)
+        ys.pad((0, n), 'constant', 0)
+
+        return self.iterate(xs=xs, ys=ys, gamma=gamma, iterations=iterations)
 
 
 ########################################################################################################################
@@ -137,7 +154,7 @@ class KalmanGraphicalModel(nn.Module):
 ########################################################################################################################
 
 
-class KalmanInputGraphicalModel(nn.Module):
+class KalmanInputGraphicalModel(Smoother, Predictor):
     """
     Class that implements the Kalman Filter as an iterative graph message passing routine.
     Currently just a Smoother.
@@ -198,10 +215,11 @@ class KalmanInputGraphicalModel(nn.Module):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def iterate(self, xs: tensor, ys: tensor, us: tensor, gamma: float, iterations: int = 100):
+    def iterate(self, xs: tensor, ys: tensor, us: tensor, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
+        (batch x feat x seq)
         :param xs: estimates of the states
         :param ys: observations
         :param us: the inputs.
@@ -224,8 +242,8 @@ class KalmanInputGraphicalModel(nn.Module):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
-        xs should be batch x feat x samples
-        ys should be batch x feat x samples
+        xs should be (batch x feat x samples)
+        ys should be (batch x feat x samples)
         :param xs: estimates of the state
         :param ys: observations.
         :param us: inputs
@@ -261,3 +279,24 @@ class KalmanInputGraphicalModel(nn.Module):
         # return messages
         return [m1, m2, m3]
 
+    def predict(self, n: int, xs: tensor, ys: tensor, us: tensor, gamma: float,
+                iterations: int = 200):
+        """
+        Predicts up to n time steps into the future.
+        inputs expected to be (batch x feat x seq)
+        :param n:
+        :param xs:
+        :param ys:
+        :param us:
+        :param gamma:
+        :param iterations:
+        :return:
+        """
+        # us must match size otherwise error
+        if us.shape[2] != (ys.shape[2] + n):
+            raise Exception("Inputs (us) must be provided to line up with predicted time.")
+        else:
+            # add n steps to the end of ys. (should be sequence dimension)
+            ys.pad((0, n), 'constant', 0)
+
+        return self.iterate(xs=xs, ys=ys, us=us, gamma=gamma, iterations=iterations)
