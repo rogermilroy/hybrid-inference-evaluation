@@ -54,6 +54,7 @@ Initialise the workspace and setup dependancies
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
+    git clone https://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git
 
     cd ..
 
