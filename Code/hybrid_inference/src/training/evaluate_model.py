@@ -1,11 +1,8 @@
-from tqdm import tqdm
-import torch
-from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataloader import get_dataloaders
-from torch.nn.functional import mse_loss
-from src.models.graphical_model import KalmanGraphicalModel, KalmanInputGraphicalModel
-from filterpy.kalman import KalmanFilter
+from src.models.graphical_model import KalmanGraphicalModel
+from src.models.hybrid_inference_model import HybridInference
 from src.utils.data_converters import *
+from torch.nn.functional import mse_loss
 
 
 def evaluate_model_input(model, loader, criterion, device, vis_example=0):
@@ -75,12 +72,50 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
     return epoch_loss, (epoch_loss / divisor)
 
 
+def evaluate_model_predict(model, loader, criterion, device, n, vis_example=0):
+    model.eval()
+    epoch_loss = 0.
+    sample = None
+    H = torch.tensor([[1., 0., 0., 0.],
+                      [0., 0., 1., 0.]])
+    if vis_example > 0:
+        sample = len(loader) / vis_example
+    with torch.no_grad():
+        for num, (obs, states) in enumerate(loader):
+            obs, states = obs.to(device), states.to(device)
+
+            # modify obs to change the last n to 0s
+            obs = obs[:, :-n, :]
+
+            # compute the prediction.
+            if isinstance(model, HybridInference):
+                out, out_list = model.predict(n, obs)
+            else:
+                xs = H.matmul(obs.permute(0, 2, 1))
+                out = model.iterate(xs, obs.permute(0, 2, 1), 1e-4)
+
+            if sample and num % sample == 0:
+                print("Predictions: ", out)
+                print("Ground truth: ", states)
+                print("Difference: ", states - out)
+
+            # need to override mse averaging.
+            loss = criterion(torch.matmul(H, out.permute(0, 1, 2)), torch.matmul(H, states.permute(0, 2, 1)),
+                             reduction='sum')
+
+            # add to the epochs loss
+            epoch_loss += float(loss)
+
+    divisor = loader.dataset.total_samples()
+    return epoch_loss, (epoch_loss / divisor)
+
+
 def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model1: str,
                    path_to_model2: str):
     # need datasets
     _, _, test_loader = get_dataloaders(train_samples=10,
                                         val_samples=10,
-                                        test_samples=200,
+                                        test_samples=20,
                                         sample_length=100,
                                         starting_point=1000,
                                         batch_size=5,
@@ -88,7 +123,7 @@ def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model
     if model_2_input or model_1_input:
         _, _, test_loader_input = get_dataloaders(train_samples=10,
                                                   val_samples=10,
-                                                  test_samples=200,
+                                                  test_samples=20,
                                                   sample_length=100,
                                                   starting_point=1000,
                                                   batch_size=5,
@@ -197,9 +232,9 @@ def compare2kalman(model, filter, loader):
     # print results
     divisor = loader.dataset.total_samples()
     print("Total loss for HI Model: {}".format(hi_tot_loss))
-    print("Average loss for HI Model: {}".format(hi_tot_loss/divisor))
+    print("Average loss for HI Model: {}".format(hi_tot_loss / divisor))
     print("Total loss for Kalman Model: {}".format(kal_tot_loss))
-    print("Total loss for Kalman Model: {}".format(kal_tot_loss/divisor))
+    print("Total loss for Kalman Model: {}".format(kal_tot_loss / divisor))
 
 
 if __name__ == '__main__':
@@ -231,13 +266,13 @@ if __name__ == '__main__':
 
     hi = HybridInference(F, H, Q, R)
 
-    kal = KalmanFilter(dim_x=4, dim_z=2)
-    kal.F = torch2numpy(F)
-    kal.H = torch2numpy(H)
-    kal.Q = torch2numpy(Q)
-    kal.R = torch2numpy(R)
-    kal.P = P
-
+    # kal = KalmanFilter(dim_x=4, dim_z=2)
+    # kal.F = torch2numpy(F)
+    # kal.H = torch2numpy(H)
+    # kal.Q = torch2numpy(Q)
+    # kal.R = torch2numpy(R)
+    # kal.P = P
+    #
     _, _, test_loader = get_dataloaders(train_samples=10,
                                         val_samples=10,
                                         test_samples=200,
@@ -246,4 +281,6 @@ if __name__ == '__main__':
                                         batch_size=1,
                                         extras=False)
 
-    compare2kalman(hi, kal, test_loader)
+    evaluate_model_predict(hi, test_loader, mse_loss, 'cpu', 2)
+
+    # compare2kalman(hi, kal, test_loader)

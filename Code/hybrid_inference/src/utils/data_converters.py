@@ -1,5 +1,5 @@
-import torch
 import numpy as np
+import torch
 
 
 def torch2numpy(tens: torch.tensor) -> np.ndarray:
