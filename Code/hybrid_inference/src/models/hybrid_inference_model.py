@@ -12,7 +12,7 @@ from torch import tensor
 #
 # Almost everything is different but it was invaluable for understanding how to implement the paper:
 # Combining Generative and Discriminative Models for Hybrid Inference
-# by Sartorras, Akata and Welling. 20 Jun 2019
+# by Satorras, Akata and Welling. 20 Jun 2019
 #
 ####################################################################################################
 

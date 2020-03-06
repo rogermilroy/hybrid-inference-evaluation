@@ -4,15 +4,15 @@ from src.models.smoother import Smoother
 from torch import tensor
 
 
-########################################################################################################################
+####################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
 # https://github.com/vgsatorras/hybrid-inference
 #
 # Almost everything is different but it was invaluable for understanding how to implement the paper:
-# Combining Generative and Discriminative Models for Hybrid Inference by Sartorras, Akata and Welling. 20 Jun 2019
+# Combining Generative and Discriminative Models for Hybrid Inference
+# by Satorras, Akata and Welling. 20 Jun 2019
 #
-########################################################################################################################
-
+####################################################################################################
 
 class KalmanGraphicalModel(Smoother, Predictor):
     """
@@ -144,15 +144,15 @@ class KalmanGraphicalModel(Smoother, Predictor):
         return self.iterate(xs=xs, ys=ys, gamma=gamma, iterations=iterations)
 
 
-########################################################################################################################
+####################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
 # https://github.com/vgsatorras/hybrid-inference
 #
 # Almost everything is different but it was invaluable for understanding how to implement the paper:
-# Combining Generative and Discriminative Models for Hybrid Inference by Sartorras, Akata and Welling. 20 Jun 2019
+# Combining Generative and Discriminative Models for Hybrid Inference
+# by Satorras, Akata and Welling. 20 Jun 2019
 #
-########################################################################################################################
-
+####################################################################################################
 
 class KalmanInputGraphicalModel(Smoother, Predictor):
     """
