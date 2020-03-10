@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import numpy as np
 import rospy
 from geometry_msgs.msg import Twist, Pose
@@ -40,6 +42,10 @@ def get_pos_numpy(pose: Pose):
     ret[1] = pose.position.y
     ret[2] = pose.position.z
     return ret
+
+
+def get_linear_numpy(tw: Twist):
+    return np.array([tw.linear.x, tw.linear.y, tw.linear.z])
 
 
 def set_linear_twist_numpy(tw: Twist, arr: np.ndarray):
