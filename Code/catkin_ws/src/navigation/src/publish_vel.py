@@ -1,45 +1,39 @@
-#! /usr/bin//env python
+#! /usr/bin/env python
+
+from queue import Queue
 
 import rospy
-from geometry_msgs import Twist
-from queue import SimpleQueue
+from geometry_msgs.msg import Twist
+from utils import empty_twist
 
 
 class PublishVel:
 
-    def __init__(self, velq: SimpleQueue):
-        self.pub = rospy.Publisher('/cmd_vel', Twist)
-        self.rate = rospy.Rate(20)
+    def __init__(self, velq: Queue):
+        self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+        self.rate = rospy.Rate(100)
         self.velq = velq
-
-    @staticmethod
-    def empty_twist() -> Twist:
-        tw = Twist()
-        tw.linear.x = 0.0
-        tw.linear.y = 0.0
-        tw.linear.z = 0.0
-        tw.angular.x = 0.0
-        tw.angular.y = 0.0
-        tw.angular.z = 0.0
-        return tw
 
     def publish(self):
         cache_vel = empty_twist()
 
         while True:
             if self.velq.empty():
+                # print("Empty Queue")
                 vel_to_publish = cache_vel
             else:
                 vel_to_publish = self.velq.get()
                 cache_vel = vel_to_publish
             self.pub.publish(vel_to_publish)
+            # print("Current vel publishing",vel_to_publish)
             self.rate.sleep()
 
 
-def start_publisher(velq: SimpleQueue):
+def start_publisher(velq: Queue):
     """
     Wrapper to start publisher for threading.
     :return: None
     """
+    # rospy.init_node('publish_vel')
     pub = PublishVel(velq=velq)
     pub.publish()
