@@ -26,7 +26,7 @@ class NavigateToPoint:
         self._target.position.z = 0.
 
         # create pid
-        self._pid = PID(P=1.2, I=0.1, D=0.4, target=self._target)
+        self._pid = PID(P=1., I=0.1, D=0.4, target=self._target)
 
         self._action_server = SimpleActionServer('navigate_to_point', NavigateToPointAction, self.set_target_callback,
                                                  auto_start=False)
@@ -50,8 +50,7 @@ class NavigateToPoint:
                 self._action_server.set_succeeded()
             else:
                 # publish feedback
-                self._feedback = NavigateToPointFeedback()
-                self._feedback.command = out
+                self._feedback = NavigateToPointFeedback(out)
                 self._action_server.publish_feedback(self._feedback)
 
     def set_target_callback(self, goal: NavigateToPointActionGoal):
