@@ -73,10 +73,6 @@ class PID(Controller):
         # compute the difference (error)
         prop: np.ndarray = get_vector_to_point_quaternion(get_pos_numpy(current), get_pos_numpy(self._target),
                                                           get_quaternion_numpy(current))
-        # if close hover.
-        # if np.sum(prop) < 0.5:
-        #     self._output = empty_twist()
-        #     return
         print("Error ", prop)
 
         # compute the differential
