@@ -218,11 +218,8 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         :param Fs:
         :return:
         """
-        # us must match size otherwise error
-        if us.shape[2] != (ys.shape[2] + n):
-            raise Exception("Inputs (us) must be provided to line up with predicted time.")
-        else:
-            # add n steps to the end of ys. (should be sequence dimension)
-            ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
+
+        # add n steps to the end of ys. (should be sequence dimension)
+        ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
 
         return self.forward(ys=ys, Fs=Fs)
