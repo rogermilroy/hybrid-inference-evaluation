@@ -1,5 +1,4 @@
 import torch
-from src.models.hybrid_inference_model import HybridInference
 
 if __name__ == '__main__':
     F = torch.tensor([[1., 1., 0., 0.],
@@ -16,7 +15,7 @@ if __name__ == '__main__':
     G = torch.tensor([[1 / 2, 1, 0., 0.],
                       [0., 0., 1 / 2, 1]]).t()
 
-    hi = HybridInference(F, H, Q, R)
+    hi = KalmanHybridInference(F, H, Q, R)
 
     scripted_hi = torch.jit.script(hi)
 

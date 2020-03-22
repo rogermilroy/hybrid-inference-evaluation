@@ -1,8 +1,10 @@
 import torch
-from src.models.graphical_model import KalmanGraphicalModel, KalmanInputGraphicalModel, ExtendedKalmanGraphicalModel
-from src.models.graphical_nn_model import KalmanGNN
+from src.data.synthetic_position_dataloader import get_dataloaders
 from src.models.predictor import Predictor
 from src.models.smoother import Smoother
+from src.torchscript.graphical_models import KalmanGraphicalModel, KalmanInputGraphicalModel, \
+    ExtendedKalmanGraphicalModel
+from src.torchscript.graphical_nn_model import KalmanGNN
 
 
 ####################################################################################################
@@ -16,10 +18,10 @@ from src.models.smoother import Smoother
 ####################################################################################################
 
 
-class HybridInference(Smoother, Predictor):
+class KalmanHybridInference(Smoother, Predictor):
 
     def __init__(self, F, H, Q, R, gamma: float = 1e-4):
-        super(HybridInference, self).__init__()
+        super(KalmanHybridInference, self).__init__()
         self.graph = KalmanGraphicalModel(F=F, H=H, Q=Q, R=R)
         self.gnn = KalmanGNN(h_dim=48, x_dim=F.shape[0], y_dim=R.shape[0])
         self.H = H
@@ -89,10 +91,10 @@ class HybridInference(Smoother, Predictor):
 ####################################################################################################
 
 
-class HybridInferenceInput(Smoother, Predictor):
+class InputKalmanHybridInference(Smoother, Predictor):
 
     def __init__(self, F, H, Q, R, G, gamma: float = 1e-4):
-        super(HybridInferenceInput, self).__init__()
+        super(InputKalmanHybridInference, self).__init__()
         self.graph = KalmanInputGraphicalModel(F=F, H=H, Q=Q, R=R, G=G)
         self.gnn = KalmanGNN(h_dim=48, x_dim=F.shape[0], y_dim=R.shape[0])
         self.H = H
@@ -134,7 +136,7 @@ class HybridInferenceInput(Smoother, Predictor):
             xs = xs + self.gamma * (eps + torch.sum(torch.stack(messages), 0, True).squeeze(0))
             iter_preds.append(xs)
         # return the final estimate of the positions.
-        return xs, torch.stack(iter_preds)
+        return xs
 
     @torch.jit.export
     def predict(self, n: int, ys, us):
@@ -206,7 +208,7 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
             xs = xs + self.gamma * (eps + torch.sum(torch.stack(messages), 0, True).squeeze(0))
             iter_preds.append(xs)
         # return the final estimate of the positions.
-        return xs, torch.stack(iter_preds)
+        return xs
 
     @torch.jit.export
     def predict(self, n: int, ys, Fs):
@@ -223,3 +225,29 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
 
         return self.forward(ys=ys, Fs=Fs)
+
+
+if __name__ == '__main__':
+    _, _, test_loader = get_dataloaders(train_samples=10,
+                                        val_samples=10,
+                                        test_samples=200,
+                                        sample_length=100,
+                                        starting_point=1000,
+                                        batch_size=1,
+                                        extras=False)
+    obs, state = next(iter(test_loader))
+    H = torch.tensor([[1., 0., 0., 0.],
+                      [0., 0., 1., 0.]])
+    Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
+                      [0., 0.05 ** 2, 0., 0.],
+                      [0., 0., 0.05 ** 2, 0.],
+                      [0., 0., 0., 0.05 ** 2]])
+    R = (0.05 ** 2) * torch.eye(2)
+
+    Fs = torch.stack([torch.tensor([[1., 1., 0., 0.],
+                                    [0., 1., 0., 0.],
+                                    [0., 0., 1., 1.],
+                                    [0., 0., 0., 1.]])] * 100)
+
+    EHI = ExtendedKalmanHybridInference(H, Q, R)
+    res = EHI(obs, Fs)
