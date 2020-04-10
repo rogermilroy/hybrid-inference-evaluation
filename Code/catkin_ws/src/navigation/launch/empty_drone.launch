@@ -20,5 +20,4 @@
     <arg name="use_ground_truth_for_control" value="$(arg use_ground_truth_for_control)" />
   </include>
 
-  <node name="talker" pkg="navigation" type="talker" output="screen" />
 </launch>
