@@ -1,8 +1,8 @@
 import torch
 import torch.nn.functional as F
-from src.models.batch_gru import BatchGRUCell
 from src.models.decoding_model import GraphDecoder
 from src.models.encoding_model import GraphEncoderMLP
+from src.torchscript.batch_gru import BatchGRUCell
 from torch import nn
 
 

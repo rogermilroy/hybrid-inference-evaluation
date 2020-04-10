@@ -308,11 +308,11 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
 #  EKF version (takes F as input for each forward pass.
 ####################################################################################################
 
-
 class ExtendedKalmanGraphicalModel(Smoother, Predictor):
     """
-    Class that implements the Kalman Filter as an iterative graph message passing routine.
-    Currently just a Smoother.
+    Class that implements the Extended Kalman Filter as an iterative graph message passing routine.
+    The main difference is that the transition matrix F is passed in at each time step which allows
+    for it to be computed at each time step as the Jacobian of the underlying transition.
     """
 
     def __init__(self, H, Q, R):
@@ -338,10 +338,10 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         should be dims x samples shape.
         :param x_past: xt-1
         :param x_curr: xt
-        :param Fs: The F for each time step in the sequence
+        :param Fs: The F for each time step in the sequence (seq x feat x feat)
         :return:
         """
-        res = x_curr - Fs.matmul(x_past)
+        res = x_curr - Fs.matmul(x_past.permute(2, 1, 0)).permute(2, 1, 0)
         return res
 
     def diff_curr_fut(self, x_curr, x_fut, Fs):
@@ -350,10 +350,10 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         Should be dims x samples shape.
         :param x_curr: xt
         :param x_fut: xt+1
-        :param Fs: The F for each time step
+        :param Fs: The F for each time step (seq x feat x feat)
         :return:
         """
-        res = x_fut - Fs.matmul(x_curr)
+        res = x_fut - Fs.matmul(x_curr.permute(2, 1, 0)).permute(2, 1, 0)
         return res
 
     def diff_y_curr(self, ys, x_curr):
@@ -397,7 +397,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         ys should be (batch x feat x samples)
         :param xs: estimates of the state
         :param ys: observations.
-        :param Fs: The F at each timestept in the sequence
+        :param Fs: The F at each timestept in the sequence (seq x feat x feat)
         :return:
         """
 
@@ -416,7 +416,9 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs, Fs))
-        m2 = Fs.t().matmul(self.Qinv).matmul(self.diff_curr_fut(xs, x_future, Fs))
+        # this is really disgusting but its the only way to multiply a sequence of Fs.
+        m2 = Fs.permute(0, 2, 1).matmul(self.Qinv).matmul(
+            self.diff_curr_fut(xs, x_future, Fs).permute(2, 1, 0)).permute(2, 1, 0)
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
         # return messages

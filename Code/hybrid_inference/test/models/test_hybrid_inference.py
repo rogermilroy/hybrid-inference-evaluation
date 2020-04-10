@@ -1,28 +1,30 @@
-from ...src.data.synthetic_position_dataset import SyntheticPositionDataset
 from unittest import TestCase
+
 import torch
-from ...src.models.hybrid_inference_model import HybridInference
+
+from ...src.data.synthetic_position_dataset import SyntheticPositionDataset
+from ...src.models.hybrid_inference_model import KalmanHybridInference
 
 
-class TestHybridInference(TestCase):
+class TestKalmanHybridInference(TestCase):
 
     def setUp(self) -> None:
         self.F = torch.tensor([[1., 1., 0., 0.],
-                          [0., 1., 0., 0.],
-                          [0., 0., 1., 1.],
-                          [0., 0., 0., 1.]])
+                               [0., 1., 0., 0.],
+                               [0., 0., 1., 1.],
+                               [0., 0., 0., 1.]])
         self.H = torch.tensor([[1., 0., 0., 0.],
                                [0., 0., 1., 0.]])
         self.Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
-                          [0., 0.05 ** 2, 0., 0.],
+                               [0., 0.05 ** 2, 0., 0.],
                           [0., 0., 0.05 ** 2, 0.],
                           [0., 0., 0., 0.05 ** 2]])
         self.R = (0.05 ** 2) * torch.eye(2)
-        self.model = HybridInference(F=self.F,
-                                     H=self.H,
-                                     Q=self.Q,
-                                     R=self.R,
-                                     gamma=1e-4)
+        self.model = KalmanHybridInference(F=self.F,
+                                           H=self.H,
+                                           Q=self.Q,
+                                           R=self.R,
+                                           gamma=1e-4)
         self.dataset = SyntheticPositionDataset(x0=torch.tensor([0., 0.1, 0., 0.1]), n_samples=100, sample_length=10,
                                                 starting_point=0, seed=42)
 

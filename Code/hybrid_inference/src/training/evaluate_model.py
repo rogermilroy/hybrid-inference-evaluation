@@ -1,6 +1,6 @@
 from src.data.synthetic_position_dataloader import get_dataloaders
 from src.models.graphical_model import KalmanGraphicalModel
-from src.models.hybrid_inference_model import HybridInference
+from src.models.hybrid_inference_model import KalmanHybridInference
 from src.utils.data_converters import *
 from torch.nn.functional import mse_loss
 
@@ -18,7 +18,7 @@ def evaluate_model_input(model, loader, criterion, device, vis_example=0):
             obs, states, inputs = obs.to(device), states.to(device), inputs.to(device)
 
             # compute the prediction.
-            if isinstance(model, HybridInference):
+            if isinstance(model, KalmanHybridInference):
                 out, out_list = model(obs, inputs)
             else:
                 xs = H.matmul(obs.permute(0, 2, 1))
@@ -51,7 +51,7 @@ def evaluate_model(model, loader, criterion, device, vis_example=0):
             obs, states = obs.to(device), states.to(device)
 
             # compute the prediction.
-            if isinstance(model, HybridInference):
+            if isinstance(model, KalmanHybridInference):
                 out, out_list = model(obs)
             else:
                 xs = H.matmul(obs.permute(0, 2, 1))
@@ -88,7 +88,7 @@ def evaluate_model_predict(model, loader, criterion, device, n, vis_example=0):
             obs = obs[:, :-n, :]
 
             # compute the prediction.
-            if isinstance(model, HybridInference):
+            if isinstance(model, KalmanHybridInference):
                 out, out_list = model.predict(n, obs)
             else:
                 xs = H.matmul(obs.permute(0, 2, 1))
@@ -157,7 +157,7 @@ def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model
                          H=H,
                          Q=Q,
                          R=R)
-    if isinstance(model1, HybridInference):
+    if isinstance(model1, KalmanHybridInference):
         model1.gamma = 1e-4
         if len(path_to_model1) > 0:
             model1.load_state_dict(torch.load(path_to_model1, map_location=torch.device("cpu")))
@@ -174,7 +174,7 @@ def compare_models(model_1, model_1_input, model_2, model_2_input, path_to_model
                          Q=Q,
                          R=R)
 
-    if isinstance(model2, HybridInference):
+    if isinstance(model2, KalmanHybridInference):
         model2.gamma = 1e-4
 
         if len(path_to_model2) > 0:
@@ -238,33 +238,33 @@ def compare2kalman(model, filter, loader):
 
 
 if __name__ == '__main__':
-    # compare_models(model_1=KalmanGraphicalModel, model_2=HybridInference, model_1_input=False,
-    #                model_2_input=False,
-    #                path_to_model1="",
-    #                path_to_model2="../../weighted_mse_results/weighted_train_len1000_mse_start0_seq10.pt")
+    compare_models(model_1=KalmanGraphicalModel, model_2=KalmanHybridInference, model_1_input=True,
+                   model_2_input=False,
+                   path_to_model1="",
+                   path_to_model2="")
 
-    # compare_models(model_1=KalmanInputGraphicalModel, model_2=HybridInference, model_1_input=True,
+    # compare_models(model_1=KalmanInputGraphicalModel, model_2=KalmanHybridInference, model_1_input=True,
     #                model_2_input=True,
     #                path_to_model1="",
     #                path_to_model2="../../weighted_mse_results"
     #                               "/weighted_input_train_len5000_mse_start0_seq10.pt")
 
-    F = torch.tensor([[1., 1., 0., 0.],
-                      [0., 1., 0., 0.],
-                      [0., 0., 1., 1.],
-                      [0., 0., 0., 1.]])
-    H = torch.tensor([[1., 0., 0., 0.],
-                      [0., 0., 1., 0.]])
-    Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
-                      [0., 0.05 ** 2, 0., 0.],
-                      [0., 0., 0.05 ** 2, 0.],
-                      [0., 0., 0., 0.05 ** 2]])
-    R = (0.05 ** 2) * torch.eye(2)
-    G = torch.tensor([[1 / 2, 1, 0., 0.],
-                      [0., 0., 1 / 2, 1]]).t()
-    P = np.eye(4) * 1000
-
-    hi = HybridInference(F, H, Q, R)
+    # F = torch.tensor([[1., 1., 0., 0.],
+    #                   [0., 1., 0., 0.],
+    #                   [0., 0., 1., 1.],
+    #                   [0., 0., 0., 1.]])
+    # H = torch.tensor([[1., 0., 0., 0.],
+    #                   [0., 0., 1., 0.]])
+    # Q = torch.tensor([[0.05 ** 2, 0., 0., 0.],
+    #                   [0., 0.05 ** 2, 0., 0.],
+    #                   [0., 0., 0.05 ** 2, 0.],
+    #                   [0., 0., 0., 0.05 ** 2]])
+    # R = (0.05 ** 2) * torch.eye(2)
+    # G = torch.tensor([[1 / 2, 1, 0., 0.],
+    #                   [0., 0., 1 / 2, 1]]).t()
+    # P = np.eye(4) * 1000
+    #
+    # hi = KalmanHybridInference(F, H, Q, R)
 
     # kal = KalmanFilter(dim_x=4, dim_z=2)
     # kal.F = torch2numpy(F)
@@ -273,14 +273,14 @@ if __name__ == '__main__':
     # kal.R = torch2numpy(R)
     # kal.P = P
     #
-    _, _, test_loader = get_dataloaders(train_samples=10,
-                                        val_samples=10,
-                                        test_samples=200,
-                                        sample_length=100,
-                                        starting_point=1000,
-                                        batch_size=1,
-                                        extras=False)
-
-    evaluate_model_predict(hi, test_loader, mse_loss, 'cpu', 2)
+    # _, _, test_loader = get_dataloaders(train_samples=10,
+    #                                     val_samples=10,
+    #                                     test_samples=200,
+    #                                     sample_length=100,
+    #                                     starting_point=1000,
+    #                                     batch_size=1,
+    #                                     extras=False)
+    #
+    # evaluate_model_predict(hi, test_loader, mse_loss, 'cpu', 2)
 
     # compare2kalman(hi, kal, test_loader)
