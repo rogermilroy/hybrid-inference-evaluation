@@ -12,7 +12,7 @@ First you need a version of Ubuntu, preferably 18.04 LTS.
 
 Make sure everything is up to date.
 
-    run sudo apt update
+    sudo apt update
 
 #### Install pytorch
 (you will need python 3.6 +)
@@ -52,7 +52,7 @@ Initialise the workspace and setup dependancies
 
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_models.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git
-    git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git
+    git clone https://github.com/rogermilroy/hector_localization.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git
 
