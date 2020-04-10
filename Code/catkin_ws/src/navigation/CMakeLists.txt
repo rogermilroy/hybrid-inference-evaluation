@@ -7,10 +7,19 @@ project(navigation)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs actionlib_msgs geometry_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs actionlib_msgs geometry_msgs Eigen3)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+#find_package(Eigen3)
+if(NOT EIGEN3_FOUND)
+    # Fallback to cmake_modules
+    find_package(cmake_modules REQUIRED)
+    find_package(Eigen REQUIRED)
+    set(EIGEN3_FOUND ${EIGEN_FOUND})
+    set(EIGEN3_INCLUDE_DIR ${EIGEN_INCLUDE_DIRS})
+endif()
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -100,9 +109,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES simple_stop
- CATKIN_DEPENDS actionlib_msgs
+  INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR}
+  LIBRARIES ${CATKIN_DEVEL_PREFIX}/include/hector_pose_estimation
+  CATKIN_DEPENDS actionlib_msgs
 #  DEPENDS system_lib
 )
 
@@ -113,14 +122,29 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
+        include
+        ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/simple_stop.cpp
 # )
+
+#set(CMAKE_PREFIX_PATH /home/r/Documents/FinalProject/FullUnit_1920_RogerMilroy/Code/libtorch)
+#set(CMAKE_PREFIX_PATH /home/r/pytorch/build_libtorch/build)
+
+#set(torch_DIR /home/r/pytorch/build_libtorch/build)
+#find_package(Torch REQUIRED)
+#
+#if (NOT Torch_FOUND)
+#    message(FATAL_ERROR "libtorch not found,  will not built.")
+#else ()
+#    message(STATUS "++++ found libtorch ")
+#endif()
+
+
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -131,6 +155,10 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(talker src/talker.cpp)
+
+#add_executable(test_load_model src/test_load_model.cpp)
+
+#add_executable(test_manage_vectors src/test_manage_vectors.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -144,9 +172,20 @@ add_executable(talker src/talker.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(talker
-  ${catkin_LIBRARIES}
-)
+        ${catkin_LIBRARIES}
+        )
 
+#target_link_libraries(test_load_model
+#        torch
+#        )
+#
+#target_link_libraries(test_manage_vectors
+#        ${TORCH_LIBRARIES}
+#        hector_pose_estimation
+#        )
+
+#set_property(TARGET test_load_model PROPERTY CXX_STANDARD 14)
+#set_property(TARGET test_manage_vectors PROPERTY CXX_STANDARD 14)
 #############
 ## Install ##
 #############
