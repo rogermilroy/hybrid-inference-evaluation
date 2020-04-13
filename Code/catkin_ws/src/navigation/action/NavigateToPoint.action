@@ -1,0 +1,7 @@
+# goal definition
+geometry_msgs/Pose pose
+---
+# result definition
+---
+# feedback definition
+geometry_msgs/Twist current_command
