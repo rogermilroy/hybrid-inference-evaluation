@@ -30,7 +30,21 @@ Feel free to do this inside a virtualenv to keep your system tidier.
     cd <repo_root>/Code/hybrid_inference
     pip3 install --user .
 
-#### ROS section
+### AWS OpenVPN Setup
+
+For running on AWS with pose_estimation being remote
+On AWS machine 
+    
+    cd ~
+    wget https://git.io/vpn -O openvpn-install.sh
+    chmod +x openvpn-install.sh
+    sudo ./openvpn-install.sh
+    sudo lsof -i
+
+Select the defaults for almost everything in the script except for DNS, use 1.1.1.1.   
+If you see openvpn near the bottom of the output of lsof -i then it was successful
+
+#### ROS
 
 ##### INSTALL ROS
 Follow wiki.ros.org/melodic/Installation/Ubuntu instructions for installing.
@@ -38,11 +52,11 @@ Follow wiki.ros.org/melodic/Installation/Ubuntu instructions for installing.
 
 Install hector quadrotor packages.
 
-Install qt4 which is a dependency of the hector project.
+Install qt4 and geographic msgs which are a dependencies of the hector project.
 
     sudo apt install qt4-default ros-melodic-geographic-msgs
 
-Initialise the workspace and setup dependencies
+Initialise the workspace and setup dependencies (you will need to change the start of the sed command to the path on your machine to this repo)
 
     cd <repo_root>/Code/catkin_ws/src
 
@@ -71,9 +85,6 @@ Then source, use the appropriate one depending on whether you are using bash or 
     source devel/setup.bash
     
     source devel/setup.zsh
-
-It is highly likely that you will have to run catkin_make many times.
-For some reason it builds in a bad order. Main thing is if it stalls at one point for more than say 5 reruns of catkin_make. You should check if you have run out of memory. Have a htop instance open.
 
 ---
 
