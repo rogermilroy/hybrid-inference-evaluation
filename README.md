@@ -44,6 +44,24 @@ On AWS machine
 Select the defaults for almost everything in the script except for DNS, use 1.1.1.1.   
 If you see openvpn near the bottom of the output of lsof -i then it was successful
 
+Set up ROS environment variables
+
+    export ROS_IP=10.8.0.1
+    export ROS_MASTER_URI=http://10.8.0.2:11311
+    
+Then on local VM 
+    
+    cd ~
+    scp -i some_key.pem ubuntu@<aws-instance-public-ip>:~/client.ovpn .
+    export ROS_IP=10.8.0.2
+    sudo openvpn client.ovpn
+    
+Open a new terminal and run
+
+    ifconfig
+
+the bottom should show tun0 and ip as 10.8.0.2
+
 #### ROS
 
 ##### INSTALL ROS
