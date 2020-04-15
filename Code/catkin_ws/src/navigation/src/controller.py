@@ -73,7 +73,7 @@ class PID(Controller):
         # compute the difference (error)
         prop: np.ndarray = get_vector_to_point_quaternion(get_pos_numpy(current), get_pos_numpy(self._target),
                                                           get_quaternion_numpy(current))
-        print("Error ", prop)
+        # print("Error ", prop)
 
         # compute the differential
         diff: np.ndarray = prop / time_delta
@@ -84,7 +84,7 @@ class PID(Controller):
 
         # set the output.
         out_nump = (self.P * prop) + (self.I * self._sum) + (self.D * diff)
-        print('out Numpy', out_nump)
+        # print('out Numpy', out_nump)
         self._output = set_linear_twist_numpy(self._output, out_nump)
 
     def output(self) -> Twist:

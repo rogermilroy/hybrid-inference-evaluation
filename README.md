@@ -32,6 +32,7 @@ Feel free to do this inside a virtualenv to keep your system tidier.
 
 #### ROS section
 
+##### INSTALL ROS
 Follow wiki.ros.org/melodic/Installation/Ubuntu instructions for installing.
 ##### Use ros-melodic-desktop-full and follow all steps.
 
@@ -39,26 +40,37 @@ Install hector quadrotor packages.
 
 Install qt4 which is a dependency of the hector project.
 
-    sudo apt install qt4-default
-    sudo apt install ros-melodic-geographic-msgs
+    sudo apt install qt4-default ros-melodic-geographic-msgs
 
-Initialise the workspace and setup dependancies
+Initialise the workspace and setup dependencies
 
-    cd <repo_root>/Code/catkin_ws
-    git submodule init
-    git submodule update
-
-    cd src
+    cd <repo_root>/Code/catkin_ws/src
 
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_models.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git
-    git clone https://github.com/rogermilroy/hector_localization.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git
+    git clone https://github.com/rogermilroy/hector_localization.git
+    
+    sed -i 's/set(CMAKE_PREFIX_PATH \/home\/r\/Documents\/FinalProject\/FullUnit_1920_RogerMilroy\/Code\/libtorch)/set(CMAKE_PREFIX_PATH \/home\/ubuntu\/FullUnit_1920_RogerMilroy\/Code\/libtorch)/' hector_localization/hector_pose_estimation_core/CMakeLists.txt
 
-    cd ..
+    cd ../..
+    
+    wget https://download.pytorch.org/libtorch/cu101/libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
+    
+    unzip libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
+    
+    rm libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
 
+    cd catkin_ws
+    
     catkin_make
+    
+Then source, use the appropriate one depending on whether you are using bash or zsh.
+
+    source devel/setup.bash
+    
+    source devel/setup.zsh
 
 It is highly likely that you will have to run catkin_make many times.
 For some reason it builds in a bad order. Main thing is if it stalls at one point for more than say 5 reruns of catkin_make. You should check if you have run out of memory. Have a htop instance open.
