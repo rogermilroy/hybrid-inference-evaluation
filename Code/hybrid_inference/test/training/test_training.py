@@ -1,11 +1,9 @@
 from unittest import TestCase
+
 import torch
-from src.training.train_hybrid_inference import train_hybrid_inference
-from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataset import SyntheticPositionDataset
-from torch.nn.functional import mse_loss
 from src.training.loss import weighted_mse_loss
-from time import time
+from src.training.train_hybrid_inference import train_hybrid_inference
 
 
 class TestTraining(TestCase):
@@ -138,7 +136,7 @@ class TestTraining(TestCase):
     #         self.data_params["train_samples"] *= 10
 
     # def test_trained_model(self):
-    #     model = HybridInference(F=torch.tensor([[1., 1., 0., 0.],
+    #     model = KalmanHybridInference(F=torch.tensor([[1., 1., 0., 0.],
     #                                             [0., 1., 0., 0.],
     #                                             [0., 0., 1., 1.],
     #                                             [0., 0., 0., 1.]]).to(self.computing_device),

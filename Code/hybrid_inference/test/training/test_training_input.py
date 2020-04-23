@@ -1,11 +1,9 @@
 from unittest import TestCase
+
 import torch
-from src.training.train_hybrid_inference import train_hybrid_inference
-from src.models.hybrid_inference_model import HybridInference
 from src.data.synthetic_position_dataset import SyntheticPositionDataset
-from torch.nn.functional import mse_loss
 from src.training.loss import weighted_mse_loss
-from time import time
+from src.training.train_hybrid_inference import train_hybrid_inference
 
 
 class TestTraining(TestCase):

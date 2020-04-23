@@ -26,7 +26,7 @@ class NavigateToPoint:
         self._target.position.z = 0.
 
         # create pid
-        self._pid = PID(P=1., I=0.1, D=0.4, target=self._target)
+        self._pid = PID(P=1., I=0.2, D=0.4, target=self._target)
 
         self._action_server = SimpleActionServer('navigate_to_point', NavigateToPointAction, self.set_target_callback,
                                                  auto_start=False)
@@ -59,7 +59,8 @@ class NavigateToPoint:
 
     def start(self):
         # create subscriber to deal with pose changes
-        rospy.Subscriber('/ground_truth/state', Odometry, self.position_callback)
+        # rospy.Subscriber('/ground_truth/state', Odometry, self.position_callback)
+        rospy.Subscriber("/state", Odometry, self.position_callback)
 
         self._action_server.start()
 

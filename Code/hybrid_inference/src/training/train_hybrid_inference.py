@@ -1,11 +1,12 @@
-from src.models.hybrid_inference_model import HybridInference
-from src.data.synthetic_position_dataloader import get_dataloaders
-import torch
 import math
-from torch.optim import Adam
-from torch.nn.functional import mse_loss
 from time import time
-from tqdm import tqdm
+
+import torch
+from src.data.synthetic_position_dataloader import get_dataloaders
+from src.models.hybrid_inference_model import KalmanHybridInference
+from torch.nn.functional import mse_loss
+from torch.optim import Adam
+
 from .evaluate_model import evaluate_model, evaluate_model_input
 
 
@@ -121,18 +122,18 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
     if inputs:
         G = torch.tensor([[1 / 2, 1, 0., 0.],
                           [0., 0., 1 / 2, 1]], device=computing_device).t()
-        model = HybridInference(F=F,
-                                H=H,
-                                Q=Q,
-                                R=R,
-                                G=G,
-                                gamma=1e-3)
+        model = KalmanHybridInference(F=F,
+                                      H=H,
+                                      Q=Q,
+                                      R=R,
+                                      G=G,
+                                      gamma=1e-3)
     else:
-        model = HybridInference(F=F,
-                                H=H,
-                                Q=Q,
-                                R=R,
-                                gamma=1e-3)
+        model = KalmanHybridInference(F=F,
+                                      H=H,
+                                      Q=Q,
+                                      R=R,
+                                      gamma=1e-3)
 
     if load_model is not None:
         model.load_state_dict(torch.load(load_model))

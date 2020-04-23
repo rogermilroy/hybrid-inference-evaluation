@@ -1,7 +1,6 @@
 import torch
 from src.models.predictor import Predictor
 from src.models.smoother import Smoother
-from torch import tensor
 
 
 ####################################################################################################
@@ -14,6 +13,7 @@ from torch import tensor
 #
 ####################################################################################################
 
+
 class KalmanGraphicalModel(Smoother, Predictor):
     """
     Class that implements the Kalman Filter as an iterative graph message passing routine.
@@ -21,7 +21,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
     TODO make an implementation of an interface.
     """
 
-    def __init__(self, F: tensor, H: tensor, Q: tensor, R: tensor):
+    def __init__(self, F, H, Q, R):
         """
         Initialises the graphical model.
 
@@ -39,7 +39,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         self.FtQinv = F.t().matmul(Q.inverse())
         self.HtRinv = H.t().matmul(R.inverse())
 
-    def diff_past_curr(self, x_past: tensor, x_curr: tensor) -> tensor:
+    def diff_past_curr(self, x_past, x_curr):
         """
         Calculates xt - Fxt-1.
         xcurr and xpast must have the same dimensions.
@@ -51,7 +51,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         res = x_curr - self.F.matmul(x_past)
         return res
 
-    def diff_curr_fut(self, x_curr: tensor, x_fut: tensor) -> tensor:
+    def diff_curr_fut(self, x_curr, x_fut):
         """
         Calculates xt+1 - Fxt
         Should be dims x samples shape.
@@ -62,7 +62,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         res = x_fut - self.F.matmul(x_curr)
         return res
 
-    def diff_y_curr(self, ys: tensor, x_curr: tensor) -> tensor:
+    def diff_y_curr(self, ys, x_curr):
         """
         Calculates y - Hxt
         :param ys:
@@ -72,7 +72,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def iterate(self, xs: tensor, ys: tensor, gamma: float, iterations: int = 200):
+    def iterate(self, xs, ys, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
@@ -95,7 +95,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         # return the result.
         return x
 
-    def forward(self, xs: tensor, ys: tensor):
+    def forward(self, xs, ys):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
@@ -127,7 +127,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         # return messages
         return [m1, m2, m3]
 
-    def predict(self, n: int, xs: tensor, ys: tensor, gamma: float, iterations: int = 200):
+    def predict(self, n: int, xs, ys, gamma: float, iterations: int = 200):
         """
         Predicts up to n time steps into the future.
         inputs expected to be (batch x feat x seq)
@@ -139,7 +139,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         :return:
         """
         # add n steps to the end of ys. (should be sequence dimension)
-        ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
+        ys.pad((0, n), 'constant', 0)
 
         return self.iterate(xs=xs, ys=ys, gamma=gamma, iterations=iterations)
 
@@ -154,6 +154,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
 #
 ####################################################################################################
 
+
 class KalmanInputGraphicalModel(Smoother, Predictor):
     """
     Class that implements the Kalman Filter as an iterative graph message passing routine.
@@ -161,7 +162,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
     TODO make an implementation of an interface.
     """
 
-    def __init__(self, F: tensor, H: tensor, Q: tensor, R: tensor, G: tensor):
+    def __init__(self, F, H, Q, R, G):
         """
         Initialises the graphical model.
 
@@ -180,7 +181,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         self.FtQinv = F.t().matmul(Q.inverse())
         self.HtRinv = H.t().matmul(R.inverse())
 
-    def diff_past_curr(self, x_past: tensor, x_curr: tensor, us: tensor) -> tensor:
+    def diff_past_curr(self, x_past, x_curr, us):
         """
         Calculates xt - Fxt-1.
         xcurr and xpast must have the same dimensions.
@@ -193,7 +194,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         res = x_curr - self.F.matmul(x_past) + self.G.matmul(us)
         return res
 
-    def diff_curr_fut(self, x_curr: tensor, x_fut: tensor, us_fut: tensor) -> tensor:
+    def diff_curr_fut(self, x_curr, x_fut, us_fut):
         """
         Calculates xt+1 - Fxt
         Should be dims x samples shape.
@@ -205,7 +206,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         res = x_fut - (self.F.matmul(x_curr) + self.G.matmul(us_fut))
         return res
 
-    def diff_y_curr(self, ys: tensor, x_curr: tensor) -> tensor:
+    def diff_y_curr(self, ys, x_curr):
         """
         Calculates y - Hxt
         :param ys:
@@ -215,7 +216,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def iterate(self, xs: tensor, ys: tensor, us: tensor, gamma: float, iterations: int = 200):
+    def iterate(self, xs, ys, us, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
@@ -238,7 +239,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         # return the result.
         return x
 
-    def forward(self, xs: tensor, ys: tensor, us: tensor):
+    def forward(self, xs, ys, us):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
@@ -280,7 +281,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         # return messages
         return [m1, m2, m3]
 
-    def predict(self, n: int, xs: tensor, ys: tensor, us: tensor, gamma: float,
+    def predict(self, n: int, xs, ys, us, gamma: float,
                 iterations: int = 200):
         """
         Predicts up to n time steps into the future.
@@ -298,7 +299,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
             raise Exception("Inputs (us) must be provided to line up with predicted time.")
         else:
             # add n steps to the end of ys. (should be sequence dimension)
-            ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
+            ys.pad((0, n), 'constant', 0)
 
         return self.iterate(xs=xs, ys=ys, us=us, gamma=gamma, iterations=iterations)
 
@@ -365,13 +366,13 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         res = ys - self.H.matmul(x_curr)
         return res
 
-    def iterate(self, xs, ys, Fs, gamma: float, iterations: int = 200):
+    def iterate(self, xs, ys, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
         :param xs: estimates of the states
         :param ys: observations
-        :param gamma: the factor by which to update the x s.
+        :param gamma: the factor by which to update the xs.
         :param iterations: The number of iterations the iterative process should do.
         :return:
         """
@@ -381,7 +382,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         # iterate up to the number of iterations
         for i in range(iterations):
             # each time calculate the messages
-            messages = self.forward(x, ys, Fs)
+            messages = self.forward(x, ys)
             # update the xs by the sum of messages * gamma
             x += sum(messages) * gamma
 

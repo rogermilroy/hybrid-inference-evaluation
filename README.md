@@ -12,7 +12,7 @@ First you need a version of Ubuntu, preferably 18.04 LTS.
 
 Make sure everything is up to date.
 
-    run sudo apt update
+    sudo apt update
 
 #### Install pytorch
 (you will need python 3.6 +)
@@ -30,38 +30,79 @@ Feel free to do this inside a virtualenv to keep your system tidier.
     cd <repo_root>/Code/hybrid_inference
     pip3 install --user .
 
-#### ROS section
+### AWS OpenVPN Setup
 
+For running on AWS with pose_estimation being remote
+On AWS machine 
+    
+    cd ~
+    wget https://git.io/vpn -O openvpn-install.sh
+    chmod +x openvpn-install.sh
+    sudo ./openvpn-install.sh
+    sudo lsof -i
+
+Select the defaults for almost everything in the script except for DNS, use 1.1.1.1.   
+If you see openvpn near the bottom of the output of lsof -i then it was successful
+
+Set up ROS environment variables
+
+    export ROS_IP=10.8.0.1
+    export ROS_MASTER_URI=http://10.8.0.2:11311
+    
+Then on local VM 
+    
+    cd ~
+    scp -i some_key.pem ubuntu@<aws-instance-public-ip>:~/client.ovpn .
+    export ROS_IP=10.8.0.2
+    sudo openvpn client.ovpn
+    
+Open a new terminal and run
+
+    ifconfig
+
+the bottom should show tun0 and ip as 10.8.0.2
+
+#### ROS
+
+##### INSTALL ROS
 Follow wiki.ros.org/melodic/Installation/Ubuntu instructions for installing.
 ##### Use ros-melodic-desktop-full and follow all steps.
 
 Install hector quadrotor packages.
 
-Install qt4 which is a dependency of the hector project.
+Install qt4 and geographic msgs which are a dependencies of the hector project.
 
-    sudo apt install qt4-default
-    sudo apt install ros-melodic-geographic-msgs
+    sudo apt install qt4-default ros-melodic-geographic-msgs
 
-Initialise the workspace and setup dependancies
+Initialise the workspace and setup dependencies (you will need to change the start of the sed command to the path on your machine to this repo)
 
-    cd <repo_root>/Code/catkin_ws
-    git submodule init
-    git submodule update
-
-    cd src
+    cd <repo_root>/Code/catkin_ws/src
 
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_models.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_quadrotor.git
-    git clone https://github.com/tu-darmstadt-ros-pkg/hector_localization.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_slam.git
     git clone https://github.com/tu-darmstadt-ros-pkg/hector_gazebo.git
+    git clone https://github.com/rogermilroy/hector_localization.git
+    
+    sed -i 's/set(CMAKE_PREFIX_PATH \/home\/r\/Documents\/FinalProject\/FullUnit_1920_RogerMilroy\/Code\/libtorch)/set(CMAKE_PREFIX_PATH \/home\/ubuntu\/FullUnit_1920_RogerMilroy\/Code\/libtorch)/' hector_localization/hector_pose_estimation_core/CMakeLists.txt
 
-    cd ..
+    cd ../..
+    
+    wget https://download.pytorch.org/libtorch/cu101/libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
+    
+    unzip libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
+    
+    rm libtorch-cxx11-abi-shared-with-deps-1.4.0.zip
 
+    cd catkin_ws
+    
     catkin_make
+    
+Then source, use the appropriate one depending on whether you are using bash or zsh.
 
-It is highly likely that you will have to run catkin_make many times.
-For some reason it builds in a bad order. Main thing is if it stalls at one point for more than say 5 reruns of catkin_make. You should check if you have run out of memory. Have a htop instance open.
+    source devel/setup.bash
+    
+    source devel/setup.zsh
 
 ---
 
