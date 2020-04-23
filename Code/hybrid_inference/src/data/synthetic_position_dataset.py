@@ -1,17 +1,18 @@
-from torch.utils import data
-from torch import tensor
 import torch
 from src.models.linear_model import ConstantVelocityModel
+from torch import tensor
+from torch.utils.data import Dataset
 
 
-class SyntheticPositionDataset(data.Dataset):
+class SyntheticPositionDataset(Dataset):
     """
     A class that creates and returns synthetic position data from the GRIN to train and evaluate on.
     Data is created by transition functions.
     An unusual dataset as data is generated on demand rather than read from file.
     """
 
-    def __init__(self, x0: tensor, n_samples: int = 5000, sample_length: int = 100, starting_point:int = 0, seed: int = 42, device='cpu'):
+    def __init__(self, x0: tensor, n_samples: int = 5000, sample_length: int = 100, starting_point: int = 0,
+                 seed: int = 42, device='cpu'):
         """
         Initialises various parameters of the dataset.
         Each sample consists of a sequence of measurements and ground truths of length sample length
