@@ -13,6 +13,7 @@ First you need a version of Ubuntu, preferably 18.04 LTS.
 Make sure everything is up to date.
 
     sudo apt update
+    sudo apt upgrade
 
 #### Install pytorch
 (you will need python 3.6 +)
@@ -25,7 +26,8 @@ You may also need to use something different depending on your system. Please Go
 #### Install hybrid_inference
 
 You will need to install the package in order for imports to work correctly.
-Feel free to do this inside a virtualenv to keep your system tidier.
+Feel free to do this inside a virtualenv to keep your system tidier. If you have any issues 
+with module import errors please uninstall and use a venv.
 
     cd <repo_root>/Code/hybrid_inference
     pip3 install --user .
@@ -111,17 +113,37 @@ Then source, use the appropriate one depending on whether you are using bash or 
 FullUnit_1920_RogerMilroy
 ├── Code
 │   ├── catkin_ws
-│   │   └── src
-│   │       ├── CMakeLists.txt
-│   │       ├── hector_quadrotor
-│   │       ├── navdata_msgs
-│   │       └── tum_ardrone
+│   │   ├── src
+│   │   │   ├── CMakeLists.txt -> /opt/ros/melodic/share/catkin/cmake/toplevel.cmake
+│   │   │   ├── navdata_msgs
+│   │   │   ├── navigation
+│   │   │   │   ├── CMakeLists.txt
+│   │   │   │   ├── action
+│   │   │   │   │   └── NavigateToPoint.action
+│   │   │   │   ├── launch
+│   │   │   │   │   └── empty_drone.launch
+│   │   │   │   ├── package.xml
+│   │   │   │   └── src
+│   │   │   │       ├── controller.py
+│   │   │   │       ├── fly_figure.py
+│   │   │   │       ├── navigate_to_point.py
+│   │   │   │       ├── publish_vel.py
+│   │   │   │       ├── record_data.py
+│   │   │   │       ├── talker.cpp
+│   │   │   │       ├── test_load_model.cpp
+│   │   │   │       ├── test_manage_vectors.cpp
+│   │   │   │       └── utils.py
+│   │   │   └── tum_ardrone
+│   │   └── start_teleop.sh
 │   └── hybrid_inference
 │       ├── setup.py
 │       ├── src
 │       │   ├── __init__.py
 │       │   ├── data
 │       │   │   ├── __init__.py
+│       │   │   ├── gazebo_dataloader.py
+│       │   │   ├── gazebo_dataset.py
+│       │   │   ├── synthetic_input_dataset.py
 │       │   │   ├── synthetic_position_dataloader.py
 │       │   │   └── synthetic_position_dataset.py
 │       │   ├── data_utils
@@ -129,36 +151,63 @@ FullUnit_1920_RogerMilroy
 │       │   │   └── converters.py
 │       │   ├── models
 │       │   │   ├── __init__.py
+│       │   │   ├── batch_gru.py
 │       │   │   ├── decoding_model.py
 │       │   │   ├── encoding_model.py
 │       │   │   ├── graphical_model.py
 │       │   │   ├── graphical_nn_model.py
 │       │   │   ├── hybrid_inference_model.py
-│       │   │   └── linear_model.py
-│       │   └── training
+│       │   │   ├── linear_input_model.py
+│       │   │   ├── linear_model.py
+│       │   │   ├── predictor.py
+│       │   │   └── smoother.py
+│       │   ├── torchscript
+│       │   │   ├── batch_gru.py
+│       │   │   ├── compile_to_torchscript.py
+│       │   │   ├── graphical_models.py
+│       │   │   ├── graphical_nn_model.py
+│       │   │   ├── hybrid_inference_models.py
+│       │   │   └── process_samples.py
+│       │   ├── training
+│       │   │   ├── __init__.py
+│       │   │   ├── evaluate_extended.py
+│       │   │   ├── evaluate_model.py
+│       │   │   ├── loss.py
+│       │   │   ├── train_extended_hybrid_inference.py
+│       │   │   └── train_hybrid_inference.py
+│       │   └── utils
 │       │       ├── __init__.py
-│       │       ├── evaluate_model.py
-│       │       └── train_hybrid_inference.py
+│       │       └── data_converters.py
 │       └── test
-│           ├── __init__.py
-│           ├── data_utils
-│           │   ├── __init__.py
-│           │   └── test_converters.py
-│           ├── datasets
-│           │   ├── __init__.py
-│           │   └── test_synthetic_position_data.py
-│           ├── models
-│           │   ├── __init__.py
-│           │   ├── test_graphical_model.py
-│           │   ├── test_hybrid_inference.py
-│           │   └── test_linear_model.py
-│           └── training
-│               └── test_training.py
+│           ├── __init__.py
+│           ├── data_utils
+│           │   ├── __init__.py
+│           │   └── test_converters.py
+│           ├── datasets
+│           │   ├── __init__.py
+│           │   ├── test_gazebo_dataset.py
+│           │   └── test_synthetic_position_data.py
+│           ├── models
+│           │   ├── __init__.py
+│           │   ├── __pycache__
+│           │   │   └── test_linear_input_model.cpython-37.pyc
+│           │   ├── test_graphical_model.py
+│           │   ├── test_hybrid_inference.py
+│           │   ├── test_linear_input_model.py
+│           │   └── test_linear_model.py
+│           └── training
+│               ├── __init__.py
+│               ├── fixed_len10start1000_seq100.txt
+│               ├── test_training.py
+│               └── test_training_input.py
 ├── README.md
 └── Reports
     ├── Applications
     │   ├── Applications.pdf
     │   └── Applications.tex
+    ├── FinalReport
+    │   ├── FinalReport.pdf
+    │   └── FinalReport.tex
     ├── GRIN
     │   ├── GRIN.pdf
     │   └── GRIN.tex
@@ -176,16 +225,23 @@ FullUnit_1920_RogerMilroy
         ├── final_report.cls
         └── images
             ├── GraphicalKalmanModel.png
+            ├── Navigation.uxf
+            ├── NavigationUML.png
+            ├── PredictionKalman.png
             ├── Term1GanttChart.png
             ├── Term1GanttChartv2.png
             ├── Term1Ganttv1.png
             ├── Term2GanttChart.png
             ├── Term2Ganttv1.png
+            ├── TrelloScreenshot.png
+            ├── ekhi_integration.uxf
+            ├── ekhi_integrationUML.png
             ├── hybrid-inference-package-uml.png
             ├── hybrid-inference-package.uxf
             ├── hybrid-inference-uml.png
             ├── hybrid-inference.uxf
-            └── logo.pdf
+            ├── logo.pdf
+            └── training2000.png
 ```
 
 ---
