@@ -47,14 +47,15 @@ if __name__ == '__main__':
     nav_client = SimpleActionClient('navigate_to_point', NavigateToPointAction)
     nav_client.wait_for_server()
 
-    goals = square()
+    for i in range(4):
+        goals = square()
 
-    for goal in goals:
-        print("Sending")
-        nav_client.send_goal(goal)
-        print("Waiting")
-        nav_client.wait_for_result()
-        print("Pausing")
-        rospy.sleep(rospy.Duration(secs=5))
+        for goal in goals:
+            print("Sending")
+            nav_client.send_goal(goal)
+            print("Waiting")
+            nav_client.wait_for_result()
+            print("Pausing")
+            rospy.sleep(rospy.Duration(secs=5))
 
     print("Finished")

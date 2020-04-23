@@ -48,7 +48,7 @@ def record_twist_callback(data: Odometry):
     print(int(data.header.stamp.nsecs) // 1000)
     print(odom_to_tensor(data))
     torch.save([torch.tensor(int(data.header.stamp.nsecs) // 1000), odom_to_tensor(data)],
-               "recording1/odom-" + str(i) + ".pt")
+               "recording/odom-" + str(i) + ".pt")
     i += 1
 
 
