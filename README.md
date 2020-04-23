@@ -99,7 +99,8 @@ Initialise the workspace and setup dependencies (you will need to change the sta
     cd catkin_ws
     
     catkin_make
-    
+
+Make sure that you have sourced /opt/ros/melodic/setup.bash if catkin_make errors out. This was the last step of the Ubuntu ROS installation and is easy to miss/forget.
 Then source, use the appropriate one depending on whether you are using bash or zsh.
 
     source devel/setup.bash
