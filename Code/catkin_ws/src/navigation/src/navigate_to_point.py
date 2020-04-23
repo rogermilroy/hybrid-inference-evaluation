@@ -59,7 +59,8 @@ class NavigateToPoint:
 
     def start(self):
         # create subscriber to deal with pose changes
-        rospy.Subscriber('/ground_truth/state', Odometry, self.position_callback)
+        # rospy.Subscriber('/ground_truth/state', Odometry, self.position_callback)
+        rospy.Subscriber("/state", Odometry, self.position_callback)
 
         self._action_server.start()
 
