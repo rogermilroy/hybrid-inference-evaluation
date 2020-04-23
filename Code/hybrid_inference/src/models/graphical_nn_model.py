@@ -1,16 +1,20 @@
-from torch import nn
 import torch
-from .encoding_model import GraphEncoderMLP
-from .decoding_model import GraphDecoder
+import torch.nn.functional as F
+from src.models.batch_gru import BatchGRUCell
+from src.models.decoding_model import GraphDecoder
+from src.models.encoding_model import GraphEncoderMLP
+from torch import nn
 
-########################################################################################################################
+
+####################################################################################################
 # This code was written with reference to vgsatorras hybrid inference code.
 # https://github.com/vgsatorras/hybrid-inference
 #
 # Almost everything is different but it was invaluable for understanding how to implement the paper:
-# Combining Generative and Discriminative Models for Hybrid Inference by Sartorras, Akata and Welling. 20 Jun 2019
+# Combining Generative and Discriminative Models for Hybrid Inference
+# by Satorras, Akata and Welling. 20 Jun 2019
 #
-########################################################################################################################
+####################################################################################################
 
 
 class KalmanGNN(nn.Module):
@@ -36,7 +40,7 @@ class KalmanGNN(nn.Module):
         self.node_nn = GraphEncoderMLP(self.h_dim, self.h_dim, self.h_dim)
 
         # gru for recurrence
-        self.gru = nn.GRUCell(input_size=self.h_dim, hidden_size=self.h_dim)
+        self.gru = BatchGRUCell(input_size=self.h_dim, hidden_size=self.h_dim)
 
         self.decoder = GraphDecoder(self.h_dim, self.h_dim, self.x_dim)
 
@@ -47,31 +51,47 @@ class KalmanGNN(nn.Module):
         :param graphical_messages:
         :return:
         """
+        # messages batch x feat x samples
         past_curr_mess, fut_curr_mess, y_curr_mess = graphical_messages
-        # check dims and transpose if necessary TODO change to allow batches. also many other places.
-        if hx.shape[0] == self.h_dim:
-            hx = hx.t()
+        if len(hx.shape) == 3:
+            # TODO work out dimension checking, for now just do it right.
+            # from batch x feat x samples to samples x batch x feat
+            hx = hx.permute(2, 0, 1)
 
-        # construct the edges to pass through the relevant models
-        hx_past = torch.cat([hx[0].unsqueeze(0), hx[:-1]]).t()
-        hx_future = torch.cat([hx[1:], hx[-1].unsqueeze(0)]).t()
-        hx = hx.t()
+            # create the time shifted xs. ensure that all are oriented batch x samples x feat now.
+            # mm1 has element -1 dropped so 0 - 98 for seq len 100
+            # m0 has element 0 dropped so 1- 99 for seq len 100
+            hx_mm1 = hx[:-1].permute(1, 2, 0)
+            hx_m0 = hx[1:].permute(1, 2, 0)
+            hx = hx.permute(1, 2, 0)
 
-        # pass compute edge encodings.
-        past_curr_edge = self.past_curr_nn(torch.cat([hx_past, hx, past_curr_mess]).t()).t()
-        fut_curr_edge = self.future_curr_nn(torch.cat([hx_future, hx, fut_curr_mess]).t()).t()
-        y_curr_edge = self.y_curr_nn(torch.cat([self.hy, hx, y_curr_mess]).t()).t()
+            past_curr_edge = self.past_curr_nn(
+                torch.cat([hx_m0, hx_mm1, past_curr_mess[:, :, 1:]], dim=1).permute(0, 2, 1))
+            past_curr_edge = F.pad(past_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate',
+                                   value=0).permute(0, 2, 1)
 
-        # sum edge encodings?
-        # pass through node encoder
-        h = self.node_nn(sum([past_curr_edge, fut_curr_edge, y_curr_edge]).t()).t()
+            fut_curr_edge = self.future_curr_nn(
+                torch.cat([hx_mm1, hx_m0, fut_curr_mess[:, :, :-1]], dim=1).permute(0, 2, 1))
+            fut_curr_edge = F.pad(fut_curr_edge.permute(0, 2, 1), [1, 0], mode='replicate',
+                                  value=0).permute(0, 2, 1)
 
-        # pass through gru
-        h = self.gru(h.t(), hx.t()).t()
+            y_curr_edge = self.y_curr_nn(
+                torch.cat([self.hy, hx, y_curr_mess], dim=1).permute(0, 2, 1))
+            # still batch x samples x features
+
+            # sum edge encodings
+            # pass through node encoder
+            U = self.node_nn(sum([past_curr_edge, fut_curr_edge, y_curr_edge]))
+
+            # pass through gru
+            h = self.gru(U, hx.permute(0, 2, 1))
+            h = h.permute(0, 2, 1)
+
+            eps = self.decoder(h)
+        else:
+            raise Exception("Input should have batch dimension, unsqueeze if necessary.")
 
         # return the decoded hx and hx.
-        eps = self.decoder(h.unsqueeze(0)).squeeze(0)
-
         return eps, h
 
     def initialise_hx_y(self, ys):
@@ -82,22 +102,34 @@ class KalmanGNN(nn.Module):
         :param ys: observations?
         :return:
         """
-        if ys.shape[0] == self.y_dim:
-            # turn from dims x samples to samples x dims
-            ys = ys.t()
-        num_samples = ys.shape[0]
+        device = ys.device
+
+        if len(ys.shape) == 3:
+            batch_size = ys.shape[0]
+            if ys.shape[1] == self.y_dim:
+                ys = torch.transpose(ys, 1, 2)
+            num_samples = ys.shape[1]
+            # reorder dimensions to make the next step work properly.
+            ys = torch.transpose(ys, 1, 0)
+            # concatenate the first element with the rest of the list - end element. transpose
+            # again
+            y_past = torch.transpose(torch.cat([ys[0].unsqueeze(0), ys[:-1]]), 1, 0)
+            y_future = torch.transpose(torch.cat([ys[1:], ys[-1].unsqueeze(0)]), 1, 0)
+            # return ys to normal.
+            ys = torch.transpose(ys, 1, 0)
+        else:
+            raise Exception("Input should have batch dimension, unsqueeze if necessary.")
+
         # take the difference between past and current ys and current and future ys.
-        y_past = torch.cat([ys[0].unsqueeze(0), ys[:-1]]).t()
-        y_future = torch.cat([ys[1:], ys[-1].unsqueeze(0)]).t()
-        ys = ys.t()
         diff1 = ys - y_past
         diff2 = y_future - ys
 
         # concatenate and  unsqueeze
-        hy_in = torch.cat([diff1, diff2]).unsqueeze(0)
-        # pass through a one dimensional convolution.
+
+        hy_in = torch.cat([diff1, diff2], dim=2).permute(0, 2, 1)
         # save as self.hy
-        self.hy = self.hy_initialiser(hy_in).squeeze(0)  # needs squeezing as convs only take 3d inputs
-        hx = torch.randn((self.h_dim, num_samples))
+        self.hy = self.hy_initialiser(hy_in)  # .permute(1, 2, 0) TODO see if reshaping here is
+        # better
+        hx = torch.randn((batch_size, self.h_dim, num_samples), device=device)
 
         return hx

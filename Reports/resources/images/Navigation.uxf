@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram program="umlet" version="14.2">
+  <zoom_level>7</zoom_level>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>175</x>
+      <y>175</y>
+      <w>301</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>navigation::NavigateToPoint
+--
+-_current_pos: Pose
+-_vel_q: Queue
+-_pid: PID
+-_action_server: SimpleActionServer
+-_goal: NavigateToPointActionGoal
+-publish_thread: Thread(PublishVel)
+--
++position_callback(data: Odometry): None
++set_target_callback(goal: NavigateToPointActionGoal): None
++start(): None
+--
+Subscribed to /state or /ground_truth/state
+--
+Responsibilities
+-- ActionServer that recieves the desired goal. Position is 
+    checked in callback and command calculated by PID. 
+    Published by the publish_thread.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>567</x>
+      <y>406</y>
+      <w>231</w>
+      <h>154</h>
+    </coordinates>
+    <panel_attributes>navigation::PublishVel
+--
+-pub: Publisher
+-rate: Rate
+-velq: Queue
+-cache_val: Twist
+--
++publish(): None
+--
+Publishes to /cmd_vel
+--
+Responsibilities
+-- This class is to be instatiated as a Thread
+    it's responsibility is to ensure that there
+    is always a command sent to \cmd_vel. It
+    caches the last command in case commands 
+    stop.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>616</x>
+      <y>70</y>
+      <w>140</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>&lt;&lt;Abstract&gt;&gt;
+navigation::Controller
+--
+/+update(current)/
+/+output()/
+/+set_target(target)/
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>UMLClass</id>
+    <coordinates>
+      <x>602</x>
+      <y>182</y>
+      <w>168</w>
+      <h>189</h>
+    </coordinates>
+    <panel_attributes>Controller::PID
+--
+-P: float
+-I: float
+-D: float
+-_time: rosTime
+-_sum: np.ndarray
+-_output: Twist
+-_avg_window: float
+--
++update(current: Pose): None
++output(): Twist
++set_target(target: Pose): None
+--
+Responsibilities
+-- To calculate the commands to 
+     send to \cmd_vel to reach the
+     desired target.</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>679</x>
+      <y>133</y>
+      <w>21</w>
+      <h>63</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;.</panel_attributes>
+    <additional_attributes>10.0;10.0;10.0;70.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>469</x>
+      <y>217</y>
+      <w>147</w>
+      <h>21</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;190.0;10.0</additional_attributes>
+  </element>
+  <element>
+    <id>Relation</id>
+    <coordinates>
+      <x>469</x>
+      <y>238</y>
+      <w>112</w>
+      <h>252</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;&lt;-</panel_attributes>
+    <additional_attributes>10.0;10.0;90.0;10.0;90.0;340.0;140.0;340.0</additional_attributes>
+  </element>
+</diagram>

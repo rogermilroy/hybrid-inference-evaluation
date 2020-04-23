@@ -41,7 +41,7 @@ class ConstantVelocityModel:
         self.R = MultivariateNormal(measurement_mean, measurement_covariance)
 
     def __call__(self, *args, **kwargs):
-        self.x = (self.A @ self.x.T) + self.Q.sample()
-        self.measurement = (self.H @ self.x.T) + self.R.sample()
+        self.x = (self.A @ self.x.t()) + self.Q.sample()
+        self.measurement = (self.H @ self.x.t()) + self.R.sample()
         return self.x, self.measurement
 

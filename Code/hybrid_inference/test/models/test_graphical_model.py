@@ -28,14 +28,14 @@ class TestGraphicalModel(TestCase):
 
     def test_once(self):
         obs, states = self.dataset[3]
-        xs = self.H.T.matmul(obs.T)
-        result = self.model.once(xs, obs)
+        xs = self.H.t().matmul(obs.t())
+        result = self.model(xs, obs)
         print(result)
 
     def test_forward(self):
         obs, states = self.dataset[4]
-        xs = self.H.T.matmul(obs.T)
-        best_estimate = self.model(xs, obs, 1e-4, 100)
+        xs = self.H.t().matmul(obs.t())
+        best_estimate = self.model.iterate(xs, obs, 1e-4, 100)
         print(sum(sum(states - best_estimate.t())))
         self.assertTrue(torch.allclose(states, best_estimate.t(), atol=0.9))
 

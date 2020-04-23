@@ -7,7 +7,6 @@ class TestSyntheticPositionData(TestCase):
 
     def setUp(self) -> None:
         self.x0 = torch.tensor([0., 1., 0., 2.])
-        pass
 
     def tearDown(self) -> None:
         pass
