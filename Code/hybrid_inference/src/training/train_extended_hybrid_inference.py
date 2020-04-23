@@ -162,9 +162,14 @@ def train_hybrid_inference(n, weighted, save_path, log_path="./training.txt", vi
 
         print("Time taken: {}".format(time() - start))
         print("Test average loss: {}".format(test_av_loss))
-        log_file.write("Time taken: {}\n".format(time() - start))
-        log_file.write("Test average loss: {}\n".format(test_av_loss))
+        # log_file.write("Time taken: {}\n".format(time() - start))
+        log_file.write("Test : {}\n".format(test_av_loss))
 
 
 if __name__ == '__main__':
-    train_hybrid_inference(500, weighted=True, save_path="../torchscript/ekhi_trained_1000.pt")
+    device = torch.device("cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print("Trying CUDA")
+
+    train_hybrid_inference(500, weighted=True, save_path="../torchscript/ekhi_trained_1000.pt", computing_device=device)

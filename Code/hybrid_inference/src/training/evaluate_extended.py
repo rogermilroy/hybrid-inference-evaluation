@@ -21,7 +21,7 @@ def evaluate_extended_model(model, loader, criterion, device, vis_example=0):
                       [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
                       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
                       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]
-                      ], device=torch.device("cpu"))
+                      ], device=device)
 
     if vis_example > 0:
         sample = len(loader) / vis_example
