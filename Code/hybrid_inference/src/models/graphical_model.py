@@ -84,7 +84,7 @@ class KalmanGraphicalModel(Smoother, Predictor):
         """
         # xs should be batch x feat x samples
         # ys should be batch x feat x samples.
-        x = xs
+        x = xs.clone().detach()
         # iterate up to the number of iterations
         for i in range(iterations):
             # each time calculate the messages
@@ -121,9 +121,10 @@ class KalmanGraphicalModel(Smoother, Predictor):
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs))
+        m1 = torch.nn.functional.pad(m1[:, :, 1:], (1,0), mode='constant', value=0)
         m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future))
+        m2 = torch.nn.functional.pad(m2[:, :, :-1], (0, 1), mode='constant', value=0)
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
-
         # return messages
         return [m1, m2, m3]
 
@@ -227,7 +228,7 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
         :param iterations: The number of iterations the iterative process should do.
         :return:
         """
-        x = xs
+        x = xs.clone().detach()
         # iterate up to the number of iterations
         for i in range(iterations):
             # each time calculate the messages
@@ -274,7 +275,9 @@ class KalmanInputGraphicalModel(Smoother, Predictor):
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs, us))
+        m1 = torch.nn.functional.pad(m1[:, :, 1:], (1, 0), mode='constant', value=0)
         m2 = self.FtQinv.matmul(self.diff_curr_fut(xs, x_future, us_fut))
+        m2 = torch.nn.functional.pad(m2[:, :, :-1], (0, 1), mode='constant', value=0)
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
         # return messages
@@ -377,7 +380,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         """
         # xs should be batch x feat x samples
         # ys should be batch x feat x samples.
-        x = xs
+        x = xs.clone().detach()
         # iterate up to the number of iterations
         for i in range(iterations):
             # each time calculate the messages
@@ -416,8 +419,10 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs, Fs))
         # this is really disgusting but its the only way to multiply a sequence of Fs.
+        m1 = torch.nn.functional.pad(m1[:, :, 1:], (1, 0), mode='constant', value=0)
         m2 = Fs.permute(0, 2, 1).matmul(self.Qinv).matmul(
             self.diff_curr_fut(xs, x_future, Fs).permute(2, 1, 0)).permute(2, 1, 0)
+        m2 = torch.nn.functional.pad(m2[:, :, :-1], (0, 1), mode='constant', value=0)
         m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
 
         # return messages
