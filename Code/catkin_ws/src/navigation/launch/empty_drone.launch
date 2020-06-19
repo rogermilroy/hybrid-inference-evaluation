@@ -7,7 +7,7 @@
   <arg name="gui" default="true"/>
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
-  <arg name="local" default="true" />
+  <arg name="pose_node" default="true" />
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="paused" value="$(arg paused)"/>
@@ -19,7 +19,7 @@
 
   <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch" >
     <arg name="use_ground_truth_for_control" value="$(arg use_ground_truth_for_control)" />
-    <arg name="local" value="$(arg local)" />
+    <arg name="pose_node" value="$(arg pose_node)" />
   </include>
 
 </launch>
