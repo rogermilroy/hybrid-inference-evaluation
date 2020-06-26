@@ -329,9 +329,9 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         self.H = H
         self.Q = Q
         self.R = R
-        self.negQinv = -Q.inverse()
         self.Qinv = Q.inverse()
-        self.HtRinv = H.t().matmul(R.inverse())
+        self.negQinv = - self.Qinv
+        self.Rinv = R.inverse()
 
     def diff_past_curr(self, x_past, x_curr, Fs):
         """
@@ -358,17 +358,17 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         res = x_fut - Fs.matmul(x_curr.permute(2, 1, 0)).permute(2, 1, 0)
         return res
 
-    def diff_y_curr(self, ys, x_curr):
+    def diff_y_curr(self, ys, x_curr, Hs):
         """
         Calculates y - Hxt
         :param ys: y
         :param x_curr: xt
         :return:
         """
-        res = ys - self.H.matmul(x_curr)
+        res = ys - Hs.matmul(x_curr.permute(2, 1, 0)).permute(2, 1, 0)  # TODO verify this
         return res
 
-    def iterate(self, xs, ys, Fs, gamma: float, iterations: int = 200):
+    def iterate(self, xs, ys, Fs, Hs, gamma: float, iterations: int = 200):
         """
         This will compute the graphical model solution to the problem.
         Use once() to call a single iteration.
@@ -384,14 +384,14 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         # iterate up to the number of iterations
         for i in range(iterations):
             # each time calculate the messages
-            messages = self.forward(x, ys, Fs)
+            messages = self.forward(x, ys, Fs, Hs)
             # update the xs by the sum of messages * gamma
             x += sum(messages) * gamma
 
         # return the result.
         return x
 
-    def forward(self, xs, ys, Fs):
+    def forward(self, xs, ys, Fs, Hs):
         """
         Runs a single iteration of the graphical model.
         Returns the messages, xs and ys.
@@ -423,7 +423,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         m2 = Fs.permute(0, 2, 1).matmul(self.Qinv).matmul(
             self.diff_curr_fut(xs, x_future, Fs).permute(2, 1, 0)).permute(2, 1, 0)
         m2 = torch.nn.functional.pad(m2[:, :, :-1], (0, 1), mode='constant', value=0)
-        m3 = self.HtRinv.matmul(self.diff_y_curr(ys, xs))
+        m3 = Fs.permute(0, 2, 1).matmul(self.Rinv).matmul(self.diff_y_curr(ys, xs, Hs))
 
         # return messages
         return [m1, m2, m3]
