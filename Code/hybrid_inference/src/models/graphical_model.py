@@ -317,7 +317,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
     for it to be computed at each time step as the Jacobian of the underlying transition.
     """
 
-    def __init__(self, H, Q, R):
+    def __init__(self, Q, R):
         """
         Initialises the graphical model.
 
@@ -326,7 +326,6 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         :param R: The measurement noise model 2d square tensor
         """
         super().__init__()
-        self.H = H
         self.Q = Q
         self.R = R
         self.Qinv = Q.inverse()
@@ -365,7 +364,7 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         :param x_curr: xt
         :return:
         """
-        res = ys - Hs.matmul(x_curr.permute(2, 1, 0)).permute(2, 1, 0)  # TODO verify this
+        res = ys - Hs.matmul(x_curr.permute(2, 1, 0)).permute(2, 1, 0)
         return res
 
     def iterate(self, xs, ys, Fs, Hs, gamma: float, iterations: int = 200):
@@ -418,17 +417,18 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
 
         # result dims batch x feat x samples
         m1 = self.negQinv.matmul(self.diff_past_curr(x_past, xs, Fs))
-        # this is really disgusting but its the only way to multiply a sequence of Fs.
         m1 = torch.nn.functional.pad(m1[:, :, 1:], (1, 0), mode='constant', value=0)
+        # this is really disgusting but its the only way to multiply a sequence of Fs.
         m2 = Fs.permute(0, 2, 1).matmul(self.Qinv).matmul(
             self.diff_curr_fut(xs, x_future, Fs).permute(2, 1, 0)).permute(2, 1, 0)
         m2 = torch.nn.functional.pad(m2[:, :, :-1], (0, 1), mode='constant', value=0)
-        m3 = Fs.permute(0, 2, 1).matmul(self.Rinv).matmul(self.diff_y_curr(ys, xs, Hs))
+        m3 = Hs.permute(0, 2, 1).matmul(self.Rinv).matmul(self.diff_y_curr(ys, xs, Hs).permute(2, 1, 0)).permute(2, 1,
+                                                                                                                 0)
 
         # return messages
         return [m1, m2, m3]
 
-    def predict(self, n: int, xs, ys, gamma: float, iterations: int = 200):
+    def predict(self, n: int, xs, ys, Fs, Hs, gamma: float, iterations: int = 200):
         """
         Predicts up to n time steps into the future.
         inputs expected to be (batch x feat x seq)
@@ -442,4 +442,4 @@ class ExtendedKalmanGraphicalModel(Smoother, Predictor):
         # add n steps to the end of ys. (should be sequence dimension)
         ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
 
-        return self.iterate(xs=xs, ys=ys, gamma=gamma, iterations=iterations)
+        return self.iterate(xs=xs, ys=ys, Fs=Fs, Hs=Hs, gamma=gamma, iterations=iterations)

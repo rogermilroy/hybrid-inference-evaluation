@@ -165,14 +165,13 @@ class InputKalmanHybridInference(Smoother, Predictor):
 
 class ExtendedKalmanHybridInference(Smoother, Predictor):
 
-    def __init__(self, H, Q, R, gamma: float = 1e-4):
+    def __init__(self, Q, R, gamma: float = 1e-4):
         super(ExtendedKalmanHybridInference, self).__init__()
-        self.graph = ExtendedKalmanGraphicalModel(H=H, Q=Q, R=R)
+        self.graph = ExtendedKalmanGraphicalModel(Q=Q, R=R)
         self.gnn = KalmanGNN(h_dim=48, x_dim=Q.shape[0], y_dim=R.shape[0])
-        self.H = H
         self.gamma = gamma
 
-    def forward(self, ys, Fs):
+    def forward(self, ys, Fs, Hs):
         """
         Forward pass through the hybrid inferrer.
         This is an iterative procedure that progressively refines the estimate of the xs (states)
@@ -189,7 +188,7 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         :param Fs:
         :return:
         """
-        xs = self.H.t().matmul(torch.transpose(ys, 1, 2))
+        xs = Hs.permute(0, 2, 1).matmul(ys.permute(1, 2, 0)).permute(2, 1, 0)
 
         hx, hy = self.gnn.initialise_hx_y(ys)
 
@@ -198,7 +197,7 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         for i in range(200):
             # compute the graphical model messages
             # if us is not None:
-            messages = self.graph(xs, ys, Fs)
+            messages = self.graph(xs, ys, Fs, Hs)
             # else:
             #     messages = self.graph(xs, ys)
             # compute the hidden states and epsilon correction
@@ -220,49 +219,84 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         """
 
         # add n steps to the end of ys. (should be sequence dimension)
-        ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.)
+        ys = torch.nn.functional.pad(ys, (0, 0, 0, n), 'constant', 0.0)
 
         return self.forward(ys=ys, Fs=Fs)
 
 
 if __name__ == '__main__':
 
-    H = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
-    Q = torch.tensor([3.04167e-6, 3.04167e-6, 3.04167e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 3.04167e-8, 3.04167e-8,
-                      3.04167e-8, 1e-6, 1e-6, 1e-6]) * torch.eye(15)
+    # H = torch.tensor([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    #                   [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
+    # Q = torch.tensor([3.04167e-6, 3.04167e-6, 3.04167e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 3.04167e-8, 3.04167e-8,
+    #                   3.04167e-8, 1e-6, 1e-6, 1e-6]) * torch.eye(15)
+    # R = torch.tensor(
+    #     [ 1.0, 1.0, 100.0, 100.0, 100.0, 1e-6, 1e-6, 1e-6]) * torch.eye(8)
+    #
+    # Fs = torch.stack([torch.eye(15)] * 100)
+    #
+    # EKHI = ExtendedKalmanHybridInference(Q, R)
+    # EKHI.eval()
+    #
+    # tim = time.time()
+    # for i in range(100):
+    #     print(i)
+    #
+    #     obs = torch.ones((1, 100, 15))
+    #     # print(obs.shape)
+    #     # print(Fs.shape)
+    #
+    #     res = EKHI(obs, Fs)
+    #
+    # print("Time taken for 100: ", time.time() - tim)
+
+    Q = (1e1 * torch.tensor(
+        [1., 1., 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18, 0.18],
+        device=torch.device("cpu"))) * torch.eye(15, device=torch.device("cpu"))
     R = torch.tensor(
-        [1e-6, 1e-6, 1.0, 1e-6, 1e-6, 1e-6, 100.0, 100.0, 1.0, 1.0, 1.0, 1e-6, 1e-6, 1e-6, 1e-6]) * torch.eye(15)
+        [10.0, 10.0, 100.0, 1.0, 1.0, 1e-2, 1e-2, 1e-2], device=torch.device("cpu")) * torch.eye(8, device=torch.device(
+        "cpu"))
+
+    # H = torch.tensor([1., 1., 1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 1., 1.]) * torch.eye(15)
+    #
+    # Q = (1e1 * torch.tensor(
+    #     [1., 1., 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18, 0.18])) * torch.eye(15)
+    # R = torch.tensor(
+    #     [1.0, 1.0, 1.0, 100.0, 100.0, 1.0, 1.0, 1.0, 1e-4, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2]) * torch.eye(15)
+
+    ekhi = ExtendedKalmanHybridInference(Q, R, gamma=2e-4)
+    # need this because of batch norm...
+    ekhi.eval()
+
+    # scripted_ekhi = torch.jit.script(ekhi)
 
     Fs = torch.stack([torch.eye(15)] * 100)
-
-    EKHI = ExtendedKalmanHybridInference(H, Q, R)
-    EKHI.eval()
-
+    Hs = torch.stack([torch.zeros((8, 15))] * 100)
     tim = time.time()
-    for i in range(100):
+    for i in range(1):
         print(i)
 
-        obs = torch.ones((1, 100, 15))
+        obs = torch.zeros((1, 100, 8))
         # print(obs.shape)
         # print(Fs.shape)
 
-        res = EKHI(obs, Fs)
+        res = ekhi(obs, Fs, Hs)
+        print(res)
 
-    print("Time taken for 100: ", time.time() - tim)
+    print("Time taken for 1: ", time.time() - tim)
 
     # test running 100... big ones. take from compile to torchscript
     # then same on scripted version.
