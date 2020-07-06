@@ -95,14 +95,13 @@ class KalmanHybridInference(Smoother, Predictor):
 
 class ExtendedKalmanHybridInference(Smoother, Predictor):
 
-    def __init__(self, H, Q, R, gamma: float = 1e-4):
+    def __init__(self, Q, R, gamma: float = 1e-4):
         super(ExtendedKalmanHybridInference, self).__init__()
-        self.graph = ExtendedKalmanGraphicalModel(H=H, Q=Q, R=R)
+        self.graph = ExtendedKalmanGraphicalModel(Q=Q, R=R)
         self.gnn = KalmanGNN(h_dim=48, x_dim=Q.shape[0], y_dim=R.shape[0])
-        self.H = H
         self.gamma = gamma
 
-    def forward(self, ys, Fs):
+    def forward(self, ys, Fs, Hs):
         """
         Forward pass through the hybrid inferrer.
         This is an iterative procedure that progressively refines the estimate of the xs (states)
@@ -120,7 +119,7 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         :param iterations:
         :return:
         """
-        xs = self.H.t().matmul(torch.transpose(ys, 1, 2))
+        xs = Hs.permute(0, 2, 1).matmul(ys.permute(1, 2, 0)).permute(2, 1, 0)
 
         hx = self.gnn.initialise_hx_y(ys)
 
@@ -129,7 +128,7 @@ class ExtendedKalmanHybridInference(Smoother, Predictor):
         for i in range(200):
             # compute the graphical model messages
             # if us is not None:
-            messages = self.graph(xs, ys, Fs)
+            messages = self.graph(xs, ys, Fs, Hs)
             # else:
             #     messages = self.graph(xs, ys)
             # compute the hidden states and epsilon correction
