@@ -1,11 +1,16 @@
 import torch
 from src.data.gazebo_dataloader import get_dataloaders
+from src.models.graphical_model import ExtendedKalmanGraphicalModel
 from src.models.hybrid_inference_model import ExtendedKalmanHybridInference
+from src.utils.data_converters import torch2numpy, torchseq2numpyseq, numpy2torch
+from src.training.extended_kalman import QuadcopterExtendedKalman
 from torch.nn.functional import mse_loss
 from tqdm import tqdm
+import numpy as np
+from copy import deepcopy
 
 
-def evaluate_extended_model(model, loader, criterion, device, vis_example=0):
+def evaluate_extended_model(model, loader, criterion, device, Hs=None, vis_example=0):
     model.eval()
     epoch_loss = 0.
     sample = None
@@ -24,6 +29,20 @@ def evaluate_extended_model(model, loader, criterion, device, vis_example=0):
                       [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]
                       ], device=device)
 
+    if Hs is None:
+        Hs = torch.stack([torch.tensor([[0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+                      ], device=device)] * loader.batch_size)
+
     if vis_example > 0:
         sample = len(loader) / vis_example
     with torch.no_grad():
@@ -31,7 +50,7 @@ def evaluate_extended_model(model, loader, criterion, device, vis_example=0):
             ys, Fs, gts = ys.to(device), Fs.squeeze(0).to(device), gts.to(device)
 
             # compute the prediction.
-            out, out_list = model(ys, Fs)
+            out, out_list = model(ys, Fs, Hs)
 
             if sample and num % sample == 0:
                 print("Predictions: ", out)
@@ -89,36 +108,118 @@ def evaluate_extended_model_h(model, loader, criterion, device, vis_example=0):
     return epoch_loss, (epoch_loss / divisor)
 
 
+def H(x):
+    return np.array([[0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+                      ])
+
+
+def Hx(x):
+    return H(x).dot(x)
+
+
+def run_kalman(filter: QuadcopterExtendedKalman, ys):
+    xs = list()
+    for y in ys:
+        filter.predict()
+        filter.update(y, HJacobian=H, Hx=Hx)  # both H because using linear H.
+        xs.append(deepcopy(filter.x))
+    return np.stack(xs, axis=0)
+
+
+def compare2kalman(model, loader):
+    """
+    Compare HI to classical implementation of Extended Kalman Filter
+    :return:
+    """
+    X = torch.tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                      [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.]
+                      ])
+
+    H = torch.tensor([[0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
+                  [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
+                  ])
+
+    kal_tot_loss = 0.
+    hi_tot_loss = 0.
+    for num, (ys, Fs, gts) in tqdm(enumerate(loader)):  # TODO add Hs if necessary
+        Hs = torch.stack([H] * ys.shape[1])
+        # set up Kalman Filter things and compute Kalman loss
+        filter = QuadcopterExtendedKalman(dim_x=15, dim_y=11, Fs=torchseq2numpyseq(Fs.squeeze(0)))
+        x_0 = gts[0][0]  # TODO check
+        filter.x = torch2numpy(x_0)
+
+        # carry out the filter over the sequences and Fs
+        kal_states = run_kalman(filter, torchseq2numpyseq(ys))
+
+        kal_loss = mse_loss(X @ numpy2torch(kal_states).unsqueeze(0).permute(0,2,1),
+                            X @ gts.permute(0,2,1),
+                            reduction='sum')
+
+        kal_tot_loss += float(kal_loss)
+
+        # compute HI loss
+        hi_state, _ = model( ys.permute(0, 1, 2), Fs.squeeze(0), Hs)
+        hi_loss = mse_loss(X @ hi_state, X @ gts.permute(0,2,1), reduction='sum')
+
+        hi_tot_loss += float(hi_loss)
+
+    # print results
+    divisor = loader.dataset.total_samples()
+    print("Total loss for HI Model: {}".format(hi_tot_loss))
+    print("Average loss for HI Model: {}".format(hi_tot_loss / divisor))
+    print("Total loss for Kalman Model: {}".format(kal_tot_loss))
+    print("Total loss for Kalman Model: {}".format(kal_tot_loss / divisor))
+
+
 if __name__ == '__main__':
     # H = torch.tensor([1., 1., 1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 1., 1.]) * torch.eye(15)
-    # Q = (1e1 * torch.tensor(
-    #     [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18,
-    #      0.18])) * torch.eye(15)
-    # R = torch.tensor(
-    #     [1.0, 1.0, 1.0, 100.0, 100.0, 1.0, 1.0, 1.0, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3]) * torch.eye(15)
-
-    # H = torch.tensor([[0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1., 0.],
-    #                   [0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.],
-    #                   ], device=torch.device("cpu"))
     Q = (1e1 * torch.tensor(
-        [1., 1., 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18, 0.18],
-        device=torch.device("cpu"))) * torch.eye(15, device=torch.device("cpu"))
+        [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18,
+         0.18])) * torch.eye(15)
     R = torch.tensor(
-        [10.0, 10.0, 100.0, 100.0, 100.0, 1e-2, 1e-2, 1e-2], device=torch.device("cpu")) * torch.eye(8,
-                                                                                                     device=torch.device(
-                                                                                                         "cpu"))
+        [1.0, 1.0, 10.0, 100.0, 100.0, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2]) * torch.eye(11)
+
+
+    # Q = (1e1 * torch.tensor(
+    #     [1., 1., 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18, 0.18],
+    #     device=torch.device("cpu"))) * torch.eye(15, device=torch.device("cpu"))
+    # R = torch.tensor(
+    #     [10.0, 10.0, 100.0, 100.0, 100.0, 1e-2, 1e-2, 1e-2], device=torch.device("cpu")) * torch.eye(8,
+    #                                                                                                  device=torch.device(
+    #                                                                                                      "cpu"))
 
     ekhi = ExtendedKalmanHybridInference(Q, R, gamma=2e-4)
-    train, val, test = get_dataloaders("../../../catkin_ws/recordingH/", 5000, 0.1, 0.01, 100, seed=12, H=True)
+    train, val, test = get_dataloaders("../../../catkin_ws/recording2/", 5000, 0.1, 0.01, 100,
+                                       seed=12, H=False)
 
     # for num, (ys, Fs, gts) in enumerate(test):
     #     if num == 1:
@@ -138,7 +239,7 @@ if __name__ == '__main__':
     # print(Fm @ Fm @ x)
     # print(Fm @ Fm @ Fm @ x)
     #
-    # y = torch.jit.load('../../../catkin_ws/recording1/y-120.pt').named_parameters()
+    # y = torch.jit.load('../../../catkin_ws/recording2/y-120.pt').named_parameters()
     # next(y)
     # print(next(y)[1])
 
@@ -167,4 +268,5 @@ if __name__ == '__main__':
     # [0, sqrt(x_accel**2 + y_accel**2 + z_accel**2)*cos(beta), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, x_accel*sin(beta)/sqrt(x_accel**2 + y_accel**2 + z_accel**2), y_accel*sin(beta)/sqrt(x_accel**2 + y_accel**2 + z_accel**2), z_accel*sin(beta)/sqrt(x_accel**2 + y_accel**2 + z_accel**2)],
     # [-(x_accel**2 + y_accel**2 + z_accel**2)*sin(alpha)*cos(alpha)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), -(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)*cos(beta)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (-x_accel*sin(beta)**2 + x_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), (-y_accel*sin(beta)**2 + y_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), (-z_accel*sin(beta)**2 + z_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2)]]
 
-    print(evaluate_extended_model_h(ekhi, test, mse_loss, "cpu"))
+    # print(evaluate_extended_model(ekhi, test, mse_loss, "cpu"))
+    compare2kalman(ekhi, test)
