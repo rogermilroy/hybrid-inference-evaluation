@@ -202,11 +202,11 @@ def compare2kalman(model, loader):
 
 if __name__ == '__main__':
     # H = torch.tensor([1., 1., 1., 1., 1., 1., 1., 1., 0., 1., 1., 1., 1., 1., 1.]) * torch.eye(15)
-    Q = (1e1 * torch.tensor(
-        [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18,
-         0.18])) * torch.eye(15)
-    R = torch.tensor(
-        [1.0, 1.0, 10.0, 100.0, 100.0, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2]) * torch.eye(11)
+    # Q = (1e1 * torch.tensor(
+    #     [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 0.00548311, 0.00548311, 0.00548311, 0.18, 0.18,
+    #      0.18])) * torch.eye(15)
+    # R = torch.tensor(
+    #     [1.0, 1.0, 10.0, 100.0, 100.0, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2]) * torch.eye(11)
 
 
     # Q = (1e1 * torch.tensor(
@@ -217,9 +217,9 @@ if __name__ == '__main__':
     #                                                                                                  device=torch.device(
     #                                                                                                      "cpu"))
 
-    ekhi = ExtendedKalmanHybridInference(Q, R, gamma=2e-4)
-    train, val, test = get_dataloaders("../../../catkin_ws/recording2/", 5000, 0.1, 0.01, 100,
-                                       seed=12, H=False)
+    # ekhi = ExtendedKalmanHybridInference(Q, R, gamma=2e-4)
+    # train, val, test = get_dataloaders("../../../catkin_ws/recording2/", 5000, 0.1, 0.01, 100,
+    #                                    seed=12, H=False)
 
     # for num, (ys, Fs, gts) in enumerate(test):
     #     if num == 1:
@@ -238,10 +238,16 @@ if __name__ == '__main__':
     # print(Fm @ x)
     # print(Fm @ Fm @ x)
     # print(Fm @ Fm @ Fm @ x)
-    #
-    # y = torch.jit.load('../../../catkin_ws/recording2/y-120.pt').named_parameters()
-    # next(y)
-    # print(next(y)[1])
+
+    print(torch.load('../../../catkin_ws/recording_long/odom-4.pt'))
+
+    y = torch.jit.load('../../../catkin_ws/recording_long/y-3.pt').named_parameters()
+    print(next(y)[1])
+    print(next(y)[1])
+
+    F = torch.jit.load('../../../catkin_ws/recording_long/F-3.pt').named_parameters()
+    print(next(F)[1])
+    print(next(F)[1])
 
     # alpha, beta, gamma, x, y, z, x_vel, y_vel, z_vel, alpha_rate, beta_rate, gamma_rate, x_accel, y_accel,\
     # z_accel = sympy.symbols('alpha, beta, gamma, x, y, z, x_vel, y_vel, z_vel, alpha_rate, beta_rate, gamma_rate, x_accel, y_accel, z_accel')
@@ -269,4 +275,4 @@ if __name__ == '__main__':
     # [-(x_accel**2 + y_accel**2 + z_accel**2)*sin(alpha)*cos(alpha)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), -(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)*cos(beta)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, (-x_accel*sin(beta)**2 + x_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), (-y_accel*sin(beta)**2 + y_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2), (-z_accel*sin(beta)**2 + z_accel*cos(alpha)**2)/sqrt(-(x_accel**2 + y_accel**2 + z_accel**2)*sin(beta)**2 + (x_accel**2 + y_accel**2 + z_accel**2)*cos(alpha)**2)]]
 
     # print(evaluate_extended_model(ekhi, test, mse_loss, "cpu"))
-    compare2kalman(ekhi, test)
+    # compare2kalman(ekhi, test)
