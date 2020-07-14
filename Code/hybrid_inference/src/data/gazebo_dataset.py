@@ -22,11 +22,13 @@ class GazeboDataset(Dataset):
             # read in ys
             y = torch.jit.load(self.dir_path + "y-" + str(i) + ".pt").named_parameters()
             next(y)
+            next(y)  # this is for recording long 1 only.
             self.ys.append(next(y)[1])
 
             # read in Fs
             F = torch.jit.load(self.dir_path + "F-" + str(i) + ".pt").named_parameters()
             next(F)
+            next(F)  # this is for recording long 1 only
             self.Fs.append(next(F)[1])
 
             # read in ground truths
