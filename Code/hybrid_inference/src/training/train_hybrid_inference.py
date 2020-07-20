@@ -6,8 +6,10 @@ from src.data.synthetic_position_dataloader import get_dataloaders
 from src.models.hybrid_inference_model import KalmanHybridInference
 from torch.nn.functional import mse_loss
 from torch.optim import Adam
+from tqdm import tqdm
+from src.training.loss import weighted_mse_loss
 
-from .evaluate_model import evaluate_model, evaluate_model_input
+from src.training.evaluate_model import evaluate_model, evaluate_model_input
 
 
 def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted, validate_every,
@@ -58,14 +60,16 @@ def train_one_epoch_input(model, loader, optimizer, criterion, device, weighted,
 
 
 def train_one_epoch(model, loader, optimizer, criterion, device, weighted, validate_every,
-    val_loader, log_file):
+    val_loader, log_file, save_path, early_stopping):
     """
     Method to train for one epoch.
     """
     model.train()
     epoch_loss = 0.
     losses = list()
-    for num, (obs, states)in enumerate(loader):
+    best_val = math.inf
+    best_model = None
+    for num, (obs, states) in tqdm(enumerate(loader)):
         obs, states = obs.to(device), states.to(device)
 
         # zero the optimizers gradients from the previous iteration.
@@ -93,32 +97,43 @@ def train_one_epoch(model, loader, optimizer, criterion, device, weighted, valid
 
         # in epoch validation
         if num % validate_every == 0:
+            print("validating")
             # if we are validating then do that and print the results
             _, val_av_loss = evaluate_model(model=model, loader=val_loader,
                                                        criterion=mse_loss,
                                                        device=device)
+
             print("Batch {} avg validation loss: {}".format(num + 1, val_av_loss))
             log_file.write("Batch {} avg validation loss: {}\n".format(num + 1, val_av_loss))
+            torch.save(model.state_dict(), save_path + str(num) + ".pt")
 
-    return epoch_loss, losses
+            # store the best model based on validation scores.
+            if early_stopping and val_av_loss < best_val:
+                best_val = val_av_loss
+                best_model = model.state_dict()
+                # save the model at this point.
+                torch.save(model.state_dict(), save_path + "best.pt")
+
+    return epoch_loss, losses, best_model
 
 
-def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
+def train_hybrid_inference(epochs, loss, weighted, save_path, inputs, validate_every,
                            log_path="./training.txt",
                            vis_examples=0,
                            data_params={}, load_model=None, computing_device=torch.device("cpu"),
-                           early_stopping=True):
+                           early_stopping=True, gamma=0.005, lr=0.001):
+
     F = torch.tensor([[1., 1., 0., 0.],
                       [0., 1., 0., 0.],
                       [0., 0., 1., 1.],
                       [0., 0., 0., 1.]], device=computing_device)
     H = torch.tensor([[1., 0., 0., 0.],
                       [0., 0., 1., 0.]], device=computing_device)
-    Q = torch.tensor([[0.15 ** 2, 0., 0., 0.],
-                      [0., 0.15 ** 2, 0., 0.],
-                      [0., 0., 0.15 ** 2, 0.],
-                      [0., 0., 0., 0.15 ** 2]], device=computing_device)
-    R = (0.25 ** 2) * torch.eye(2, device=computing_device)
+    Q = torch.tensor([[0.25 ** 2, 0., 0., 0.],
+                      [0., 0.25 ** 2, 0., 0.],
+                      [0., 0., 0.25 ** 2, 0.],
+                      [0., 0., 0., 0.25 ** 2]], device=computing_device)
+    R = (0.35 ** 2) * torch.eye(2, device=computing_device)
     if inputs:
         G = torch.tensor([[1 / 2, 1, 0., 0.],
                           [0., 0., 1 / 2, 1]], device=computing_device).t()
@@ -127,13 +142,13 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                       Q=Q,
                                       R=R,
                                       G=G,
-                                      gamma=1e-3)
+                                      gamma=gamma)
     else:
         model = KalmanHybridInference(F=F,
                                       H=H,
                                       Q=Q,
                                       R=R,
-                                      gamma=1e-3)
+                                      gamma=gamma)
 
     if load_model is not None:
         model.load_state_dict(torch.load(load_model))
@@ -143,7 +158,7 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
     print("Model on CUDA?", next(model.parameters()).is_cuda)
 
     criterion = loss
-    optimizer = Adam(model.parameters(), lr=0.0005)  # reduce the learning rate to 0.0001 from 0.001
+    optimizer = Adam(model.parameters(), lr=lr)
 
     if data_params:
         # if we have specified specific training parameters use them
@@ -175,12 +190,10 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
         _, pre_val = evaluate_model(model, test_loader, criterion=mse_loss, device=computing_device)
 
     best_model = None
-    best_val = math.inf
-    validate_every = 10
     with open(log_path, 'w+') as log_file:
 
-        print("Before training avg test loss: {}".format(pre_val / divisor))
-        log_file.write("Before training avg test loss: {}".format(pre_val / divisor))
+        print("Before training avg test loss: {}".format(pre_val))
+        log_file.write("Before training avg test loss: {}".format(pre_val))
 
         start = time()
         for i in range(epochs):
@@ -195,37 +208,20 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
                                                                  val_loader=val_loader,
                                                                  log_file=log_file)
             else:
-                epoch_loss, epoch_losses = train_one_epoch(model=model, loader=train_loader,
-                                                           optimizer=optimizer,
-                                                           criterion=criterion,
-                                                           device=computing_device,
-                                                           weighted=weighted,
-                                                           validate_every=validate_every,
-                                                           val_loader=val_loader,
-                                                           log_file=log_file)
+                epoch_loss, epoch_losses, best_model = train_one_epoch(model=model,
+                                                                       loader=train_loader,
+                                                                       optimizer=optimizer,
+                                                                       criterion=criterion,
+                                                                       device=computing_device,
+                                                                       weighted=weighted,
+                                                                       validate_every=validate_every,
+                                                                       val_loader=val_loader,
+                                                                       log_file=log_file,
+                                                                       save_path=save_path,
+                                                                       early_stopping=early_stopping)
             print("Epoch {} avg training loss: {}".format(i + 1, epoch_loss / divisor))
             log_file.write("Epoch {} avg training loss: {}\n".format(i + 1, epoch_loss / divisor))
 
-            if val:
-                # if we are validating then do that and print the results
-                if inputs:
-                    val_loss, val_av_loss = evaluate_model_input(model=model, loader=val_loader,
-                                                                 criterion=mse_loss,
-                                                                 device=computing_device)
-                else:
-                    val_loss, val_av_loss = evaluate_model(model=model, loader=val_loader,
-                                                           criterion=mse_loss,
-                                                           device=computing_device)
-                print("Epoch {} avg validation loss: {}".format(i + 1, val_av_loss))
-                log_file.write("Epoch {} avg validation loss: {}\n".format(i + 1, val_av_loss))
-
-                # store the best model based on validation scores.
-                if early_stopping and val_loss < best_val:
-                    best_val = val_loss
-                    best_model = model.state_dict()
-
-            # save the model at this point.
-            torch.save(model.state_dict(), save_path)
         # load the best model based on early stopping
         if early_stopping:
             model.load_state_dict(best_model)
@@ -247,3 +243,14 @@ def train_hybrid_inference(epochs, val, loss, weighted, save_path, inputs,
         print("Test average loss: {}".format(test_av_loss))
         log_file.write("Time taken: {}\n".format(time() - start))
         log_file.write("Test average loss: {}\n".format(test_av_loss))
+
+
+if __name__ == '__main__':
+
+    data = {'train_samples': 100, 'val_samples': 20, 'test_samples': 50, 'sample_length': 100,
+            'starting_point': 0, 'batch_size': 1, 'extras': False}
+
+    train_hybrid_inference(epochs=1, loss=mse_loss, weighted=False,
+                           save_path='./linear_hi_300', inputs=False, validate_every=10,
+                           gamma=0.005,
+                           lr=0.0001, data_params=data)
