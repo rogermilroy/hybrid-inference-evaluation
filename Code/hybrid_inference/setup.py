@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='hybrid_inference',
-    packages=['src', 'test'],
+    packages=find_packages(),
     include_package_data=True,
     install_requires=[
         # 'torch>=1.3.0',
