@@ -1,6 +1,6 @@
 [submodule "Code/catkin_ws/src/tum_ardrone"]
-	path = Code/catkin_ws/src/tum_ardrone
+	path = catkin_ws/src/tum_ardrone
 	url = git@github.com:rogermilroy/tum_ardrone.git
 [submodule "Code/catkin_ws/src/navdata_msgs"]
-	path = Code/catkin_ws/src/navdata_msgs
+	path = catkin_ws/src/navdata_msgs
 	url = git@github.com:rogermilroy/navdata_msgs.git
