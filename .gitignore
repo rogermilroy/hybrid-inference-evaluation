@@ -180,3 +180,6 @@ libtorch/
 
 ## pytorch state dicts
 *.pt
+
+## resource files
+*.zip
