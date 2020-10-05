@@ -1,6 +1,15 @@
-[submodule "Code/catkin_ws/src/tum_ardrone"]
-	path = catkin_ws/src/tum_ardrone
-	url = git@github.com:rogermilroy/tum_ardrone.git
-[submodule "Code/catkin_ws/src/navdata_msgs"]
-	path = catkin_ws/src/navdata_msgs
-	url = git@github.com:rogermilroy/navdata_msgs.git
+[submodule "catkin_ws/src/hector_localization"]
+	path = catkin_ws/src/hector_localization
+	url = git@github.com:rogermilroy/hector_localization.git
+[submodule "catkin_ws/src/hector_quadrotor"]
+	path = catkin_ws/src/hector_quadrotor
+	url = git@github.com:rogermilroy/hector_quadrotor.git
+[submodule "catkin_ws/src/hector_models"]
+	path = catkin_ws/src/hector_models
+	url = git@github.com:tu-darmstadt-ros-pkg/hector_models.git
+[submodule "catkin_ws/src/hector_slam"]
+	path = catkin_ws/src/hector_slam
+	url = git@github.com:tu-darmstadt-ros-pkg/hector_slam.git
+[submodule "catkin_ws/src/hector_gazebo"]
+	path = catkin_ws/src/hector_gazebo
+	url = git@github.com:tu-darmstadt-ros-pkg/hector_gazebo.git

@@ -114,7 +114,7 @@ testing/MNIST
 testing/testing/MNIST
 
 # pycharm files
-.idea
+*.idea
 
 # VSCODE files
 .vscode
@@ -173,7 +173,7 @@ srv_gen/
 .catkin_workspace
 
 ## external projects
-hector*/
+#hector*/
 
 ## libtorch
 libtorch/
